@@ -5,6 +5,8 @@ VisualStudioVersion = 15.0.27004.2002
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "VulkanTest", "VulkanTest\VulkanTest.vcxproj", "{D8D120D6-D3B1-40BE-A9B0-891897E91656}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "trackball", "trackball\trackball.vcxproj", "{8C890B0B-D63A-413F-8318-C1DF90040F60}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -21,6 +23,13 @@ Global
 		{D8D120D6-D3B1-40BE-A9B0-891897E91656}.Release|x64.Build.0 = Release|x64
 		{D8D120D6-D3B1-40BE-A9B0-891897E91656}.Release|x86.ActiveCfg = Release|Win32
 		{D8D120D6-D3B1-40BE-A9B0-891897E91656}.Release|x86.Build.0 = Release|Win32
+		{8C890B0B-D63A-413F-8318-C1DF90040F60}.Debug|x64.ActiveCfg = Release|Win32
+		{8C890B0B-D63A-413F-8318-C1DF90040F60}.Debug|x64.Build.0 = Release|Win32
+		{8C890B0B-D63A-413F-8318-C1DF90040F60}.Debug|x86.ActiveCfg = Release|Win32
+		{8C890B0B-D63A-413F-8318-C1DF90040F60}.Debug|x86.Build.0 = Release|Win32
+		{8C890B0B-D63A-413F-8318-C1DF90040F60}.Release|x64.ActiveCfg = Release|Win32
+		{8C890B0B-D63A-413F-8318-C1DF90040F60}.Release|x86.ActiveCfg = Release|Win32
+		{8C890B0B-D63A-413F-8318-C1DF90040F60}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -276,24 +276,25 @@ private:
 		createSurface();
 		pickPhysicalDevice();
 		createLogicalDevice();
-		createSwapChain();
-		createImageViews();
-		createRenderPass();
+		createSwapChain(); // recreate 과정에서 호출
+		createImageViews(); // recreate 과정에서 호출
+		createRenderPass(); // recreate 과정에서 호출
 		createDescriptorSetLayout();
-		createGraphicsPipeline();
-		createDepthResources();
-		createFramebuffers();
+		createGraphicsPipeline(); // recreate 과정에서 호출
+		createDepthResources(); // recreate 과정에서 호출
+		createFramebuffers(); // recreate 과정에서 호출
 		createCommandPool();
 		createTextureImage();
 		createTextureImageView();
 		createTextureSampler();
 		createVertexBuffer();
 		createIndexBuffer();
-		createUniformBuffers();
-		createDescriptorPool();
-		createDescriptorSets();
-		createCommandBuffers();
+		createUniformBuffers(); // recreate 과정에서 호출
+		createDescriptorPool(); // recreate 과정에서 호출
+		createDescriptorSets(); // recreate 과정에서 호출
+		createCommandBuffers(); // recreate 과정에서 호출
 		createSyncObjects();
+
 	}
 
 	void mainLoop() {
