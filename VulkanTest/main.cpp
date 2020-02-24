@@ -23,6 +23,8 @@
 #include <set>
 #include <array>
 
+#include "cgmath.h"
+
 const int WIDTH = 800;
 const int HEIGHT = 600;
 
@@ -130,7 +132,13 @@ struct UniformBufferObject {
 };
 
 
-const std::vector<Vertex> vertices = {
+
+// Vertices, Indices
+
+static const uint NUM_TESS = 72; // initial tessellation factor of the "sphere" as a "polyhedron"
+static const float RADIUS = 1.0f;
+
+std::vector<Vertex> vertices = {
 	{ { -0.5f, -0.5f, 0.5f },{ 1.0f, 0.0f, 0.0f },{ 0.0f, 0.0f } },
 	{ { 0.5f, -0.5f, 0.5f },{ 0.0f, 1.0f, 0.0f },{ 1.0f, 0.0f } },
 	{ { 0.5f, 0.5f, 0.5f },{ 0.0f, 0.0f, 1.0f },{ 1.0f, 1.0f } },
@@ -142,7 +150,7 @@ const std::vector<Vertex> vertices = {
 	{ { -0.5f, 0.5f, -0.5f },{ 1.0f, 1.0f, 1.0f },{ 0.0f, 1.0f } }
 };
 
-const std::vector<uint16_t> indices = {
+std::vector<ushort> indices = {
 	0, 1, 2, 2, 3, 0,
 	4, 5, 6, 6, 7, 4,
 	1, 0, 4, 4, 5, 1,
@@ -150,6 +158,45 @@ const std::vector<uint16_t> indices = {
 	0, 3, 7, 7, 4, 0,
 	1, 5, 6, 6, 2, 1
 };
+
+void createVerticesAndIndices()
+{
+	vertices.clear();
+
+	// Vertice Init
+	// i : longitude, k : latitude
+	for (uint i = 0; i <= NUM_TESS; i++) {
+
+		// t : theta - angle of longitude
+		float t = PI*2.0f / float(NUM_TESS) * float(i);
+
+		for (uint k = 0; k <= NUM_TESS / 2; k++) {
+
+			// p : pi - angle of latitude
+			float p = PI*2.0f / float(NUM_TESS) * float(k);
+
+			// position, texcoord
+			float x = RADIUS * sin(p) * cos(t), y = RADIUS * sin(p) * sin(t), z = RADIUS * cos(p);
+			float c1 = t / 2 / PI;
+			float c2 = 1 - p / PI;
+
+			vertices.push_back({ {x, y, z}, {x, y, z}, {c1, c2} });
+		}
+	}
+
+	indices.clear();
+	for (ushort i = 0; i <= NUM_TESS + 1; i++) {
+		for (ushort k = 0; k < NUM_TESS / 2; k++) {
+			indices.push_back(i * (NUM_TESS / 2) + k);
+			indices.push_back(i * (NUM_TESS / 2) + k + 1);
+			indices.push_back((i + 1) * (NUM_TESS / 2) + k + 1);
+
+			indices.push_back((i + 1) * (NUM_TESS / 2) + k + 1);
+			indices.push_back((i + 1) * (NUM_TESS / 2) + k);
+			indices.push_back(i * (NUM_TESS / 2) + k);
+		}
+	}
+}
 
 
 
@@ -291,6 +338,7 @@ private:
 		createTextureImage();
 		createTextureImageView();
 		createTextureSampler();
+		createVerticesAndIndices();
 		createVertexBuffer();
 		createIndexBuffer();
 		createUniformBuffers(); // recreate 과정에서 호출
@@ -836,8 +884,8 @@ private:
 				static_cast<uint32_t>(height)
 			};
 
-			actualExtent.width = std::max(capabilities.minImageExtent.width, std::min(capabilities.maxImageExtent.width, actualExtent.width));
-			actualExtent.height = std::max(capabilities.minImageExtent.height, std::min(capabilities.maxImageExtent.height, actualExtent.height));
+			actualExtent.width = max(capabilities.minImageExtent.width, min(capabilities.maxImageExtent.width, actualExtent.width));
+			actualExtent.height = max(capabilities.minImageExtent.height, min(capabilities.maxImageExtent.height, actualExtent.height));
 
 			return actualExtent;
 		}
@@ -1199,7 +1247,7 @@ private:
 
 	void createTextureImage() {
 		int texWidth, texHeight, texChannels;
-		stbi_uc* pixels = stbi_load("textures/texture.jpg", &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
+		stbi_uc* pixels = stbi_load("textures/earth.jpg", &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
 		VkDeviceSize imageSize = texWidth * texHeight * 4;
 
 		if (!pixels) {
@@ -1531,7 +1579,7 @@ private:
 		float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
 
 		UniformBufferObject ubo = {};
-		ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 1.0f));
+		ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 		ubo.view = glm::lookAt(glm::vec3(0.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 		ubo.proj = glm::perspective(glm::radians(45.0f), swapChainExtent.width / (float)swapChainExtent.height, 0.1f, 10.0f);
 		ubo.proj[1][1] *= -1;
@@ -1769,6 +1817,15 @@ private:
 		currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
 	}
 };
+
+
+
+
+
+
+
+
+
 
 int main() {
 	HelloTriangleApplication app;

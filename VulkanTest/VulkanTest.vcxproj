@@ -26,6 +26,9 @@
     <None Include="shaders\shader.frag" />
     <None Include="shaders\shader.vert" />
   </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="cgmath.h" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>
     <ProjectGuid>{D8D120D6-D3B1-40BE-A9B0-891897E91656}</ProjectGuid>

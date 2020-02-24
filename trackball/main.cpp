@@ -57,7 +57,7 @@ GLuint	ring_index_buffer = 0;	// ID holder for index buffer (Ring)
 //*******************************************************************
 // global variables
 int		frame = 0;	// index of rendering frames
-float	radius = 1.0f;
+float	RADIUS = 1.0f;
 bool	bWireframe = false;			// this is the default
 bool    bShiftKeyPressed = false;      // state of shift key pressed
 bool    bCtrlKeyPressed = false;      // state of ctrl key pressed
@@ -414,7 +414,7 @@ void update_circle_vertices()
 			float p = PI*2.0f / float(NUM_TESS) * float(k);
 
 			// position, texcoord
-			float x = radius * sin(p) * cos(t), y = radius * sin(p) * sin(t), z = radius * cos(p);
+			float x = RADIUS * sin(p) * cos(t), y = RADIUS * sin(p) * sin(t), z = RADIUS * cos(p);
 			float c1 = t / 2 / PI;
 			float c2 = 1 - p / PI;
 
@@ -429,7 +429,7 @@ void update_circle_vertices()
 		// t : theta - angle of longitude
 		float t = PI*2.0f / float(NUM_TESS) * float(i);
 
-		float x = radius * cos(t), y = radius * sin(t);
+		float x = RADIUS * cos(t), y = RADIUS * sin(t);
 
 		ring_vertex_list.push_back({ vec3(x * 1.0f, y * 1.0f, 0), vec3(x * 1.0f, y * 1.0f, 0), vec2(0, t) });
 		ring_vertex_list.push_back({ vec3(x * 0.6f, y * 0.6f, 0), vec3(x * 0.6f, y * 0.6f, 0), vec2(1, t) });
