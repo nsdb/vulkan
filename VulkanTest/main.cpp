@@ -178,7 +178,7 @@ void createVerticesAndIndices()
 			// position, texcoord
 			float x = RADIUS * sin(p) * cos(t), y = RADIUS * sin(p) * sin(t), z = RADIUS * cos(p);
 			float c1 = t / 2 / PI;
-			float c2 = 1 - p / PI;
+			float c2 = p / PI;
 
 			vertices.push_back({ {x, y, z}, {x, y, z}, {c1, c2} });
 		}
@@ -338,7 +338,7 @@ private:
 		createTextureImage();
 		createTextureImageView();
 		createTextureSampler();
-		createVerticesAndIndices();
+		createVerticesAndIndices(); // 시점 상관 없음
 		createVertexBuffer();
 		createIndexBuffer();
 		createUniformBuffers(); // recreate 과정에서 호출
@@ -1578,10 +1578,12 @@ private:
 		auto currentTime = std::chrono::high_resolution_clock::now();
 		float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
 
+		// 모델 변환은 항상 역순이다. rotate는 항상 중앙을 기준으로 한다.
 		UniformBufferObject ubo = {};
 		ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-		ubo.view = glm::lookAt(glm::vec3(0.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-		ubo.proj = glm::perspective(glm::radians(45.0f), swapChainExtent.width / (float)swapChainExtent.height, 0.1f, 10.0f);
+		ubo.model = glm::translate(ubo.model, glm::vec3(3.0f, 0.0f, 0.0f));
+		ubo.view = glm::lookAt(glm::vec3(0.0f, 8.0f, 3.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+		ubo.proj = glm::perspective(glm::radians(45.0f), swapChainExtent.width / (float)swapChainExtent.height, 0.1f, 100.0f); // 4번째 항이 최대 시야
 		ubo.proj[1][1] *= -1;
 
 		void* data;
@@ -1768,6 +1770,7 @@ private:
 		}
 		imagesInFlight[imageIndex] = inFlightFences[currentFrame];
 
+		// Submit Info
 		VkSubmitInfo submitInfo = {};
 		submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 
@@ -1790,6 +1793,7 @@ private:
 			throw std::runtime_error("failed to submit draw command buffer!");
 		}
 
+		// Present Info
 		VkPresentInfoKHR presentInfo = {};
 		presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
 
