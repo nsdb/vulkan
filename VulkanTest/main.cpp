@@ -281,10 +281,14 @@ private:
 	// Uniform Buffer
 	std::vector<VkBuffer> uniformBuffers;
 	std::vector<VkDeviceMemory> uniformBuffersMemory;
+	std::vector<VkBuffer> uniformBuffers2;
+	std::vector<VkDeviceMemory> uniformBuffersMemory2;
 
 	// Descriptor Pool, Sets
 	VkDescriptorPool descriptorPool;
+	VkDescriptorPool descriptorPool2;
 	std::vector<VkDescriptorSet> descriptorSets;
+	std::vector<VkDescriptorSet> descriptorSets2;
 
 	// Command Buffers
 	std::vector<VkCommandBuffer> commandBuffers;
@@ -341,9 +345,12 @@ private:
 		createVerticesAndIndices(); // 시점 상관 없음
 		createVertexBuffer();
 		createIndexBuffer();
-		createUniformBuffers(); // recreate 과정에서 호출
-		createDescriptorPool(); // recreate 과정에서 호출
-		createDescriptorSets(); // recreate 과정에서 호출
+		createUniformBuffers(uniformBuffers, uniformBuffersMemory); // recreate 과정에서 호출
+		createUniformBuffers(uniformBuffers2, uniformBuffersMemory2); // recreate 과정에서 호출
+		createDescriptorPool(descriptorPool); // recreate 과정에서 호출
+		createDescriptorPool(descriptorPool2); // recreate 과정에서 호출
+		createDescriptorSets(descriptorSets, descriptorPool, uniformBuffers); // recreate 과정에서 호출
+		createDescriptorSets(descriptorSets2, descriptorPool2, uniformBuffers2); // recreate 과정에서 호출
 		createCommandBuffers(); // recreate 과정에서 호출
 		createSyncObjects();
 
@@ -790,10 +797,13 @@ private:
 		for (size_t i = 0; i < swapChainImages.size(); i++) {
 			vkDestroyBuffer(device, uniformBuffers[i], nullptr);
 			vkFreeMemory(device, uniformBuffersMemory[i], nullptr);
+			vkDestroyBuffer(device, uniformBuffers2[i], nullptr);
+			vkFreeMemory(device, uniformBuffersMemory2[i], nullptr);
 		}
 
 		// Descriptor Pool, Set
 		vkDestroyDescriptorPool(device, descriptorPool, nullptr);
+		vkDestroyDescriptorPool(device, descriptorPool2, nullptr);
 
 	}
 
@@ -817,9 +827,12 @@ private:
 		createGraphicsPipeline();
 		createDepthResources();
 		createFramebuffers();
-		createUniformBuffers();
-		createDescriptorPool();
-		createDescriptorSets();
+		createUniformBuffers(uniformBuffers, uniformBuffersMemory);
+		createUniformBuffers(uniformBuffers2, uniformBuffersMemory2);
+		createDescriptorPool(descriptorPool);
+		createDescriptorPool(descriptorPool2);
+		createDescriptorSets(descriptorSets, descriptorPool, uniformBuffers);
+		createDescriptorSets(descriptorSets2, descriptorPool2, uniformBuffers2);
 		createCommandBuffers();
 	}
 
@@ -1561,14 +1574,14 @@ private:
 
 	//// Uniform Buffer
 
-	void createUniformBuffers() {
+	void createUniformBuffers(std::vector<VkBuffer>& targetUniformBuffers, std::vector<VkDeviceMemory>& targetUniformBuffersMemory) {
 		VkDeviceSize bufferSize = sizeof(UniformBufferObject);
 
-		uniformBuffers.resize(swapChainImages.size());
-		uniformBuffersMemory.resize(swapChainImages.size());
+		targetUniformBuffers.resize(swapChainImages.size());
+		targetUniformBuffersMemory.resize(swapChainImages.size());
 
 		for (size_t i = 0; i < swapChainImages.size(); i++) {
-			createBuffer(bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, uniformBuffers[i], uniformBuffersMemory[i]);
+			createBuffer(bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, targetUniformBuffers[i], targetUniformBuffersMemory[i]);
 		}
 	}
 
@@ -1590,12 +1603,20 @@ private:
 		vkMapMemory(device, uniformBuffersMemory[currentImage], 0, sizeof(ubo), 0, &data);
 		memcpy(data, &ubo, sizeof(ubo));
 		vkUnmapMemory(device, uniformBuffersMemory[currentImage]);
+
+		// 반대방향
+		ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(-90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+		ubo.model = glm::translate(ubo.model, glm::vec3(1.0f, 0.0f, 0.0f));
+
+		vkMapMemory(device, uniformBuffersMemory2[currentImage], 0, sizeof(ubo), 0, &data);
+		memcpy(data, &ubo, sizeof(ubo));
+		vkUnmapMemory(device, uniformBuffersMemory2[currentImage]);
 	}
 
 
 	//// Descriptor Pool, Sets
 
-	void createDescriptorPool() {
+	void createDescriptorPool(VkDescriptorPool& targetDescriptorPool) {
 		std::array<VkDescriptorPoolSize, 2> poolSizes = {};
 		poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 		poolSizes[0].descriptorCount = static_cast<uint32_t>(swapChainImages.size());
@@ -1608,27 +1629,28 @@ private:
 		poolInfo.pPoolSizes = poolSizes.data();
 		poolInfo.maxSets = static_cast<uint32_t>(swapChainImages.size());
 
-		if (vkCreateDescriptorPool(device, &poolInfo, nullptr, &descriptorPool) != VK_SUCCESS) {
+		if (vkCreateDescriptorPool(device, &poolInfo, nullptr, &targetDescriptorPool) != VK_SUCCESS) {
 			throw std::runtime_error("failed to create descriptor pool!");
 		}
 	}
 
-	void createDescriptorSets() {
+	void createDescriptorSets(std::vector<VkDescriptorSet>& targetDescriptorSets, VkDescriptorPool& targetDescriptorPool, std::vector<VkBuffer>& targetUniformBuffers) {
 		std::vector<VkDescriptorSetLayout> layouts(swapChainImages.size(), descriptorSetLayout);
+
 		VkDescriptorSetAllocateInfo allocInfo = {};
 		allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-		allocInfo.descriptorPool = descriptorPool;
+		allocInfo.descriptorPool = targetDescriptorPool;
 		allocInfo.descriptorSetCount = static_cast<uint32_t>(swapChainImages.size());
 		allocInfo.pSetLayouts = layouts.data();
 
-		descriptorSets.resize(swapChainImages.size());
-		if (vkAllocateDescriptorSets(device, &allocInfo, descriptorSets.data()) != VK_SUCCESS) {
+		targetDescriptorSets.resize(swapChainImages.size());
+		if (vkAllocateDescriptorSets(device, &allocInfo, targetDescriptorSets.data()) != VK_SUCCESS) {
 			throw std::runtime_error("failed to allocate descriptor sets!");
 		}
 
 		for (size_t i = 0; i < swapChainImages.size(); i++) {
 			VkDescriptorBufferInfo bufferInfo = {};
-			bufferInfo.buffer = uniformBuffers[i];
+			bufferInfo.buffer = targetUniformBuffers[i];
 			bufferInfo.offset = 0;
 			bufferInfo.range = sizeof(UniformBufferObject);
 
@@ -1640,7 +1662,7 @@ private:
 			std::array<VkWriteDescriptorSet, 2> descriptorWrites = {};
 
 			descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-			descriptorWrites[0].dstSet = descriptorSets[i];
+			descriptorWrites[0].dstSet = targetDescriptorSets[i];
 			descriptorWrites[0].dstBinding = 0;
 			descriptorWrites[0].dstArrayElement = 0;
 			descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
@@ -1648,7 +1670,7 @@ private:
 			descriptorWrites[0].pBufferInfo = &bufferInfo;
 
 			descriptorWrites[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-			descriptorWrites[1].dstSet = descriptorSets[i];
+			descriptorWrites[1].dstSet = targetDescriptorSets[i];
 			descriptorWrites[1].dstBinding = 1;
 			descriptorWrites[1].dstArrayElement = 0;
 			descriptorWrites[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
@@ -1702,6 +1724,9 @@ private:
 
 			VkBuffer vertexBuffers[] = { vertexBuffer };
 			VkDeviceSize offsets[] = { 0 };
+
+			// Draw Planet 1
+
 			vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, vertexBuffers, offsets);
 
 			vkCmdBindIndexBuffer(commandBuffers[i], indexBuffer, 0, VK_INDEX_TYPE_UINT16);
@@ -1709,6 +1734,20 @@ private:
 			vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSets[i], 0, nullptr);
 
 			vkCmdDrawIndexed(commandBuffers[i], static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
+
+			////
+
+			// Draw Planet 2
+
+			vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, vertexBuffers, offsets);
+
+			vkCmdBindIndexBuffer(commandBuffers[i], indexBuffer, 0, VK_INDEX_TYPE_UINT16);
+
+			vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSets2[i], 0, nullptr);
+
+			vkCmdDrawIndexed(commandBuffers[i], static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
+
+			////
 
 			vkCmdEndRenderPass(commandBuffers[i]);
 
