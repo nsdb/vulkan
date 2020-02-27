@@ -267,9 +267,12 @@ private:
 	// Texture Image
 	VkImage textureImage;
 	VkDeviceMemory textureImageMemory;
+	VkImage textureImage2;
+	VkDeviceMemory textureImageMemory2;
 
 	// Texture Image View
 	VkImageView textureImageView;
+	VkImageView textureImageView2;
 	VkSampler textureSampler;
 
 	// Vertex Buffer, Index Buffer
@@ -339,7 +342,8 @@ private:
 		createDepthResources(); // recreate 과정에서 호출
 		createFramebuffers(); // recreate 과정에서 호출
 		createCommandPool();
-		createTextureImage();
+		createTextureImage(textureImage, textureImageMemory, "textures/earth.jpg");
+		createTextureImage(textureImage2, textureImageMemory2, "textures/sun.jpg");
 		createTextureImageView();
 		createTextureSampler();
 		createVerticesAndIndices(); // 시점 상관 없음
@@ -349,8 +353,8 @@ private:
 		createUniformBuffers(uniformBuffers2, uniformBuffersMemory2); // recreate 과정에서 호출
 		createDescriptorPool(descriptorPool); // recreate 과정에서 호출
 		createDescriptorPool(descriptorPool2); // recreate 과정에서 호출
-		createDescriptorSets(descriptorSets, descriptorPool, uniformBuffers); // recreate 과정에서 호출
-		createDescriptorSets(descriptorSets2, descriptorPool2, uniformBuffers2); // recreate 과정에서 호출
+		createDescriptorSets(descriptorSets, descriptorPool, uniformBuffers, textureImageView); // recreate 과정에서 호출
+		createDescriptorSets(descriptorSets2, descriptorPool2, uniformBuffers2, textureImageView2); // recreate 과정에서 호출
 		createCommandBuffers(); // recreate 과정에서 호출
 		createSyncObjects();
 
@@ -372,10 +376,13 @@ private:
 		// Texture Image View
 		vkDestroySampler(device, textureSampler, nullptr);
 		vkDestroyImageView(device, textureImageView, nullptr);
+		vkDestroyImageView(device, textureImageView2, nullptr);
 
 		// Texture Image
 		vkDestroyImage(device, textureImage, nullptr);
 		vkFreeMemory(device, textureImageMemory, nullptr);
+		vkDestroyImage(device, textureImage2, nullptr);
+		vkFreeMemory(device, textureImageMemory2, nullptr);
 
 		// Descriptor Layout
 		vkDestroyDescriptorSetLayout(device, descriptorSetLayout, nullptr);
@@ -831,8 +838,8 @@ private:
 		createUniformBuffers(uniformBuffers2, uniformBuffersMemory2);
 		createDescriptorPool(descriptorPool);
 		createDescriptorPool(descriptorPool2);
-		createDescriptorSets(descriptorSets, descriptorPool, uniformBuffers);
-		createDescriptorSets(descriptorSets2, descriptorPool2, uniformBuffers2);
+		createDescriptorSets(descriptorSets, descriptorPool, uniformBuffers, textureImageView);
+		createDescriptorSets(descriptorSets2, descriptorPool2, uniformBuffers2, textureImageView2);
 		createCommandBuffers();
 	}
 
@@ -1258,9 +1265,9 @@ private:
 
 	//// Texture Image
 
-	void createTextureImage() {
+	void createTextureImage(VkImage& targetImage, VkDeviceMemory& targetImageMemory, const char* fileName) {
 		int texWidth, texHeight, texChannels;
-		stbi_uc* pixels = stbi_load("textures/earth.jpg", &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
+		stbi_uc* pixels = stbi_load(fileName, &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
 		VkDeviceSize imageSize = texWidth * texHeight * 4;
 
 		if (!pixels) {
@@ -1278,11 +1285,11 @@ private:
 
 		stbi_image_free(pixels);
 
-		createImage(texWidth, texHeight, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, textureImage, textureImageMemory);
+		createImage(texWidth, texHeight, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, targetImage, targetImageMemory);
 
-		transitionImageLayout(textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-		copyBufferToImage(stagingBuffer, textureImage, static_cast<uint32_t>(texWidth), static_cast<uint32_t>(texHeight));
-		transitionImageLayout(textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+		transitionImageLayout(targetImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+		copyBufferToImage(stagingBuffer, targetImage, static_cast<uint32_t>(texWidth), static_cast<uint32_t>(texHeight));
+		transitionImageLayout(targetImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
 		vkDestroyBuffer(device, stagingBuffer, nullptr);
 		vkFreeMemory(device, stagingBufferMemory, nullptr);
@@ -1401,6 +1408,7 @@ private:
 
 	void createTextureImageView() {
 		textureImageView = createImageView(textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT);
+		textureImageView2 = createImageView(textureImage2, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT);
 	}
 
 	VkImageView createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags) {
@@ -1595,6 +1603,7 @@ private:
 		UniformBufferObject ubo = {};
 		ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 		ubo.model = glm::translate(ubo.model, glm::vec3(3.0f, 0.0f, 0.0f));
+		ubo.model = glm::scale(ubo.model, glm::vec3(0.5f, 0.5f, 0.5f));
 		ubo.view = glm::lookAt(glm::vec3(0.0f, 8.0f, 3.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 		ubo.proj = glm::perspective(glm::radians(45.0f), swapChainExtent.width / (float)swapChainExtent.height, 0.1f, 100.0f); // 4번째 항이 최대 시야
 		ubo.proj[1][1] *= -1;
@@ -1606,7 +1615,7 @@ private:
 
 		// 반대방향
 		ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(-90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-		ubo.model = glm::translate(ubo.model, glm::vec3(1.0f, 0.0f, 0.0f));
+		ubo.model = glm::translate(ubo.model, glm::vec3(0.0f, 0.0f, 0.0f));
 
 		vkMapMemory(device, uniformBuffersMemory2[currentImage], 0, sizeof(ubo), 0, &data);
 		memcpy(data, &ubo, sizeof(ubo));
@@ -1634,7 +1643,7 @@ private:
 		}
 	}
 
-	void createDescriptorSets(std::vector<VkDescriptorSet>& targetDescriptorSets, VkDescriptorPool& targetDescriptorPool, std::vector<VkBuffer>& targetUniformBuffers) {
+	void createDescriptorSets(std::vector<VkDescriptorSet>& targetDescriptorSets, VkDescriptorPool& targetDescriptorPool, std::vector<VkBuffer>& targetUniformBuffers, VkImageView& targetImageView) {
 		std::vector<VkDescriptorSetLayout> layouts(swapChainImages.size(), descriptorSetLayout);
 
 		VkDescriptorSetAllocateInfo allocInfo = {};
@@ -1656,7 +1665,7 @@ private:
 
 			VkDescriptorImageInfo imageInfo = {};
 			imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-			imageInfo.imageView = textureImageView;
+			imageInfo.imageView = targetImageView;
 			imageInfo.sampler = textureSampler;
 
 			std::array<VkWriteDescriptorSet, 2> descriptorWrites = {};
