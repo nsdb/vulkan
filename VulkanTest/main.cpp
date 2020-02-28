@@ -24,6 +24,7 @@
 #include <array>
 
 #include "cgmath.h"
+#include "Planet.h"
 
 const int WIDTH = 800;
 const int HEIGHT = 600;
@@ -138,26 +139,8 @@ struct UniformBufferObject {
 static const uint NUM_TESS = 72; // initial tessellation factor of the "sphere" as a "polyhedron"
 static const float RADIUS = 1.0f;
 
-std::vector<Vertex> vertices = {
-	{ { -0.5f, -0.5f, 0.5f },{ 1.0f, 0.0f, 0.0f },{ 0.0f, 0.0f } },
-	{ { 0.5f, -0.5f, 0.5f },{ 0.0f, 1.0f, 0.0f },{ 1.0f, 0.0f } },
-	{ { 0.5f, 0.5f, 0.5f },{ 0.0f, 0.0f, 1.0f },{ 1.0f, 1.0f } },
-	{ { -0.5f, 0.5f, 0.5f },{ 1.0f, 1.0f, 1.0f },{ 0.0f, 1.0f } },
-
-	{ { -0.5f, -0.5f, -0.5f },{ 1.0f, 0.0f, 0.0f },{ 0.0f, 0.0f } },
-	{ { 0.5f, -0.5f, -0.5f },{ 0.0f, 1.0f, 0.0f },{ 1.0f, 0.0f } },
-	{ { 0.5f, 0.5f, -0.5f },{ 0.0f, 0.0f, 1.0f },{ 1.0f, 1.0f } },
-	{ { -0.5f, 0.5f, -0.5f },{ 1.0f, 1.0f, 1.0f },{ 0.0f, 1.0f } }
-};
-
-std::vector<ushort> indices = {
-	0, 1, 2, 2, 3, 0,
-	4, 5, 6, 6, 7, 4,
-	1, 0, 4, 4, 5, 1,
-	6, 7, 3, 3, 2, 6,
-	0, 3, 7, 7, 4, 0,
-	1, 5, 6, 6, 2, 1
-};
+std::vector<Vertex> vertices;
+std::vector<ushort> indices;
 
 void createVerticesAndIndices()
 {
@@ -198,6 +181,24 @@ void createVerticesAndIndices()
 	}
 }
 
+// Planet
+
+std::vector<Planet> planet_list;
+
+void createPlanets() {
+
+	planet_list.clear();
+	planet_list.push_back(Planet(-1, 0, 0.0f, 5.4f, 5.2f, 0.0f));       // Sun
+	planet_list.push_back(Planet(-1, 1, 9.9f, 0.6f, 7.7f, 3.1f));       // Mercury
+	planet_list.push_back(Planet(-1, 2, 15.8f, 1.0f, 15.6f, 3.9f));     // Venus
+	planet_list.push_back(Planet(-1, 3, 19.3f, 1.0f, 1.0f, 4.4f));      // Earth
+	planet_list.push_back(Planet(-1, 4, 24.2f, 0.7f, 1.0f, 5.1f));      // Mars
+	planet_list.push_back(Planet(-1, 5, 36.8f, 3.3f, 0.6f, 8.1f));      // Jupiter
+	planet_list.push_back(Planet(-1, 6, 61.4f, 3.1f, 0.6f, 10.2f));     // Saturn
+	planet_list.push_back(Planet(-1, 7, 82.6f, 2.0f, 0.8f, 13.2f));     // Uranus
+	planet_list.push_back(Planet(-1, 8, 103.6f, 2.0f, 0.8f, 15.6f));     // Neptune
+
+}
 
 
 
@@ -282,16 +283,12 @@ private:
 	VkDeviceMemory indexBufferMemory;
 
 	// Uniform Buffer
-	std::vector<VkBuffer> uniformBuffers;
-	std::vector<VkDeviceMemory> uniformBuffersMemory;
-	std::vector<VkBuffer> uniformBuffers2;
-	std::vector<VkDeviceMemory> uniformBuffersMemory2;
+	std::vector<std::vector<VkBuffer>> uniformBuffers;
+	std::vector<std::vector<VkDeviceMemory>> uniformBuffersMemory;
 
 	// Descriptor Pool, Sets
-	VkDescriptorPool descriptorPool;
-	VkDescriptorPool descriptorPool2;
-	std::vector<VkDescriptorSet> descriptorSets;
-	std::vector<VkDescriptorSet> descriptorSets2;
+	std::vector<VkDescriptorPool> descriptorPool;
+	std::vector<std::vector<VkDescriptorSet>> descriptorSets;
 
 	// Command Buffers
 	std::vector<VkCommandBuffer> commandBuffers;
@@ -304,7 +301,7 @@ private:
 
 	// Drawing
 	size_t currentFrame = 0;
-
+	std::chrono::time_point<std::chrono::steady_clock> currentTime = std::chrono::high_resolution_clock::now();
 
 
 	//// Window
@@ -349,12 +346,18 @@ private:
 		createVerticesAndIndices(); // 시점 상관 없음
 		createVertexBuffer();
 		createIndexBuffer();
-		createUniformBuffers(uniformBuffers, uniformBuffersMemory); // recreate 과정에서 호출
-		createUniformBuffers(uniformBuffers2, uniformBuffersMemory2); // recreate 과정에서 호출
-		createDescriptorPool(descriptorPool); // recreate 과정에서 호출
-		createDescriptorPool(descriptorPool2); // recreate 과정에서 호출
-		createDescriptorSets(descriptorSets, descriptorPool, uniformBuffers, textureImageView); // recreate 과정에서 호출
-		createDescriptorSets(descriptorSets2, descriptorPool2, uniformBuffers2, textureImageView2); // recreate 과정에서 호출
+		createPlanets();
+
+		uniformBuffers.resize(planet_list.size());
+		uniformBuffersMemory.resize(planet_list.size());
+		descriptorPool.resize(planet_list.size());
+		descriptorSets.resize(planet_list.size());
+
+		for (int i = 0; i < (int)planet_list.size(); i++) {
+			createUniformBuffers(uniformBuffers[i], uniformBuffersMemory[i]); // recreate 과정에서 호출
+			createDescriptorPool(descriptorPool[i]); // recreate 과정에서 호출
+			createDescriptorSets(descriptorSets[i], descriptorPool[i], uniformBuffers[i], textureImageView); // recreate 과정에서 호출
+		}
 		createCommandBuffers(); // recreate 과정에서 호출
 		createSyncObjects();
 
@@ -800,17 +803,16 @@ private:
 		// Swapchain
 		vkDestroySwapchainKHR(device, swapChain, nullptr);
 
-		// Uniform Buffer
-		for (size_t i = 0; i < swapChainImages.size(); i++) {
-			vkDestroyBuffer(device, uniformBuffers[i], nullptr);
-			vkFreeMemory(device, uniformBuffersMemory[i], nullptr);
-			vkDestroyBuffer(device, uniformBuffers2[i], nullptr);
-			vkFreeMemory(device, uniformBuffersMemory2[i], nullptr);
+		for (int n = 0; n < (int)planet_list.size(); n++) {
+			// Uniform Buffer
+			for (size_t i = 0; i < swapChainImages.size(); i++) {
+				vkDestroyBuffer(device, uniformBuffers[n][i], nullptr);
+				vkFreeMemory(device, uniformBuffersMemory[n][i], nullptr);
+			}
+			// Descriptor Pool, Set
+			vkDestroyDescriptorPool(device, descriptorPool[n], nullptr);
 		}
 
-		// Descriptor Pool, Set
-		vkDestroyDescriptorPool(device, descriptorPool, nullptr);
-		vkDestroyDescriptorPool(device, descriptorPool2, nullptr);
 
 	}
 
@@ -834,12 +836,11 @@ private:
 		createGraphicsPipeline();
 		createDepthResources();
 		createFramebuffers();
-		createUniformBuffers(uniformBuffers, uniformBuffersMemory);
-		createUniformBuffers(uniformBuffers2, uniformBuffersMemory2);
-		createDescriptorPool(descriptorPool);
-		createDescriptorPool(descriptorPool2);
-		createDescriptorSets(descriptorSets, descriptorPool, uniformBuffers, textureImageView);
-		createDescriptorSets(descriptorSets2, descriptorPool2, uniformBuffers2, textureImageView2);
+		for (int i = 0; i < (int)planet_list.size(); i++) {
+			createUniformBuffers(uniformBuffers[i], uniformBuffersMemory[i]); // recreate 과정에서 호출
+			createDescriptorPool(descriptorPool[i]); // recreate 과정에서 호출
+			createDescriptorSets(descriptorSets[i], descriptorPool[i], uniformBuffers[i], textureImageView); // recreate 과정에서 호출
+		}
 		createCommandBuffers();
 	}
 
@@ -1594,32 +1595,58 @@ private:
 	}
 
 	void updateUniformBuffer(uint32_t currentImage) {
-		static auto startTime = std::chrono::high_resolution_clock::now();
 
-		auto currentTime = std::chrono::high_resolution_clock::now();
-		float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
+		auto checkTime = std::chrono::high_resolution_clock::now();
+		float elapsedTime = std::chrono::duration<float, std::chrono::seconds::period>(checkTime - currentTime).count();
+		currentTime = checkTime;
 
 		// 모델 변환은 항상 역순이다. rotate는 항상 중앙을 기준으로 한다.
-		UniformBufferObject ubo = {};
-		ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-		ubo.model = glm::translate(ubo.model, glm::vec3(3.0f, 0.0f, 0.0f));
-		ubo.model = glm::scale(ubo.model, glm::vec3(0.5f, 0.5f, 0.5f));
-		ubo.view = glm::lookAt(glm::vec3(0.0f, 8.0f, 3.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-		ubo.proj = glm::perspective(glm::radians(45.0f), swapChainExtent.width / (float)swapChainExtent.height, 0.1f, 100.0f); // 4번째 항이 최대 시야
-		ubo.proj[1][1] *= -1;
+		for (int i = 0; i < (int)planet_list.size(); i++) {
 
-		void* data;
-		vkMapMemory(device, uniformBuffersMemory[currentImage], 0, sizeof(ubo), 0, &data);
-		memcpy(data, &ubo, sizeof(ubo));
-		vkUnmapMemory(device, uniformBuffersMemory[currentImage]);
+			planet_list[i].time_process(elapsedTime);
 
-		// 반대방향
-		ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(-90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-		ubo.model = glm::translate(ubo.model, glm::vec3(0.0f, 0.0f, 0.0f));
+			UniformBufferObject ubo = {};
+			ubo.model = glm::mat4(1.0f);
 
-		vkMapMemory(device, uniformBuffersMemory2[currentImage], 0, sizeof(ubo), 0, &data);
-		memcpy(data, &ubo, sizeof(ubo));
-		vkUnmapMemory(device, uniformBuffersMemory2[currentImage]);
+			// child planet process
+			if (planet_list.at(i).parent_index != -1) {
+				uint parent_index = planet_list.at(i).parent_index;
+				// parent position, revolution process
+				ubo.model = glm::rotate(ubo.model, planet_list.at(parent_index).revolution_theta, glm::vec3(0.0f, 0.0f, 1.0f));
+				ubo.model = glm::translate(ubo.model, glm::vec3(planet_list.at(parent_index).distance, 0.0f, 0.0f));
+				// child position, revolution process
+				ubo.model = glm::rotate(ubo.model, planet_list.at(i).revolution_theta, glm::vec3(0.0f, 0.0f, 1.0f));
+				ubo.model = glm::translate(ubo.model, glm::vec3(planet_list.at(i).distance, 0.0f, 0.0f));
+				// parent rotation process
+				ubo.model = glm::rotate(ubo.model, planet_list.at(parent_index).rotation_theta, glm::vec3(0.0f, 0.0f, 1.0f));
+				// child rotation process
+				ubo.model = glm::rotate(ubo.model, planet_list.at(i).rotation_theta, glm::vec3(0.0f, 0.0f, 1.0f));
+				// resize
+				ubo.model = glm::scale(ubo.model, glm::vec3(planet_list.at(i).radius, planet_list.at(i).radius, planet_list.at(i).radius));
+			}
+			// normal planet process
+			else {
+				// position, revolution process
+				ubo.model = glm::rotate(ubo.model, planet_list.at(i).revolution_theta, glm::vec3(0.0f, 0.0f, 1.0f));
+				ubo.model = glm::translate(ubo.model, glm::vec3(planet_list.at(i).distance, 0.0f, 0.0f));
+				// rotation process
+				ubo.model = glm::rotate(ubo.model, planet_list.at(i).rotation_theta, glm::vec3(0.0f, 0.0f, 1.0f));
+				// resize
+				ubo.model = glm::scale(ubo.model, glm::vec3(planet_list.at(i).radius, planet_list.at(i).radius, planet_list.at(i).radius));
+
+			}
+
+			ubo.view = glm::lookAt(glm::vec3(0.0f, 100.0f, 20.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+			ubo.proj = glm::perspective(glm::radians(45.0f), swapChainExtent.width / (float)swapChainExtent.height, 1.0f, 1000.0f); // 4번째 항이 최대 시야
+			ubo.proj[1][1] *= -1;
+
+			void* data;
+			vkMapMemory(device, uniformBuffersMemory[i][currentImage], 0, sizeof(ubo), 0, &data);
+			memcpy(data, &ubo, sizeof(ubo));
+			vkUnmapMemory(device, uniformBuffersMemory[i][currentImage]);
+
+		}
+
 	}
 
 
@@ -1734,27 +1761,19 @@ private:
 			VkBuffer vertexBuffers[] = { vertexBuffer };
 			VkDeviceSize offsets[] = { 0 };
 
-			// Draw Planet 1
+			// Draw Planet
 
-			vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, vertexBuffers, offsets);
+			for (int n = 0; n < (int)planet_list.size(); n++) {
 
-			vkCmdBindIndexBuffer(commandBuffers[i], indexBuffer, 0, VK_INDEX_TYPE_UINT16);
+				vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, vertexBuffers, offsets);
 
-			vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSets[i], 0, nullptr);
+				vkCmdBindIndexBuffer(commandBuffers[i], indexBuffer, 0, VK_INDEX_TYPE_UINT16);
 
-			vkCmdDrawIndexed(commandBuffers[i], static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
+				vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSets[n][i], 0, nullptr);
 
-			////
+				vkCmdDrawIndexed(commandBuffers[i], static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
 
-			// Draw Planet 2
-
-			vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, vertexBuffers, offsets);
-
-			vkCmdBindIndexBuffer(commandBuffers[i], indexBuffer, 0, VK_INDEX_TYPE_UINT16);
-
-			vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSets2[i], 0, nullptr);
-
-			vkCmdDrawIndexed(commandBuffers[i], static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
+			}
 
 			////
 

@@ -34,5 +34,8 @@
     <ClInclude Include="cgmath.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
+    <ClInclude Include="Planet.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
