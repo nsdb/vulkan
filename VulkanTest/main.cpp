@@ -188,6 +188,7 @@ std::vector<Planet> planet_list;
 void createPlanets() {
 
 	planet_list.clear();
+
 	planet_list.push_back(Planet(-1, 0, 0.0f, 5.4f, 5.2f, 0.0f));       // Sun
 	planet_list.push_back(Planet(-1, 1, 9.9f, 0.6f, 7.7f, 3.1f));       // Mercury
 	planet_list.push_back(Planet(-1, 2, 15.8f, 1.0f, 15.6f, 3.9f));     // Venus
@@ -197,6 +198,23 @@ void createPlanets() {
 	planet_list.push_back(Planet(-1, 6, 61.4f, 3.1f, 0.6f, 10.2f));     // Saturn
 	planet_list.push_back(Planet(-1, 7, 82.6f, 2.0f, 0.8f, 13.2f));     // Uranus
 	planet_list.push_back(Planet(-1, 8, 103.6f, 2.0f, 0.8f, 15.6f));     // Neptune
+
+	// Setellite instance
+	planet_list.push_back(Planet(3, 9, 2.5f, 0.3f, 27.3f, 1.0f));  // Moon (Setellite of the Earth)
+
+	planet_list.push_back(Planet(5, 9, 4.0f, 0.4f, 0.4f, 0.4f));  // Io (Setellite of the Jupiter)
+	planet_list.push_back(Planet(5, 9, 8.5f, 0.5f, 4.0f, 4.0f));  // Callisto (Setellite of the Jupiter)
+	planet_list.push_back(Planet(5, 9, 5.0f, 0.3f, 0.8f, 0.8f));  // Europa (Setellite of the Jupiter)
+	planet_list.push_back(Planet(5, 9, 7.0f, 0.6f, 2.0f, 2.0f));  // Ganymede (Setellite of the Jupiter)
+
+	planet_list.push_back(Planet(7, 9, 3.8f, 0.3f, 0.4f, 0.4f));  // Miranda (Setellite of the Uranus)
+	planet_list.push_back(Planet(7, 9, 5.0f, 0.5f, 0.5f, 0.5f));  // Ariel (Setellite of the Uranus)
+	planet_list.push_back(Planet(7, 9, 6.5f, 0.5f, 0.6f, 0.6f));  // Umbriel (Setellite of the Uranus)
+	planet_list.push_back(Planet(7, 9, 8.0f, 0.7f, 0.8f, 0.8f));  // Titania (Setellite of the Uranus)
+	planet_list.push_back(Planet(7, 9, 10.0f, 0.7f, 1.3f, 1.3f));  // Oberon (Setellite of the Uranus)
+
+	planet_list.push_back(Planet(8, 9, 5.0f, 0.8f, -0.6f, -0.6f));  // Triton (Setellite of the Neptune)
+	planet_list.push_back(Planet(8, 9, 7.0f, 0.5f, 1.1f, 30.0f));  // Oberon (Setellite of the Neptune)
 
 }
 
