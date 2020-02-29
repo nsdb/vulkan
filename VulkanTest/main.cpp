@@ -266,14 +266,11 @@ private:
 	VkImageView depthImageView;
 
 	// Texture Image
-	VkImage textureImage;
-	VkDeviceMemory textureImageMemory;
-	VkImage textureImage2;
-	VkDeviceMemory textureImageMemory2;
+	std::vector<VkImage> textureImage;
+	std::vector<VkDeviceMemory> textureImageMemory;
 
 	// Texture Image View
-	VkImageView textureImageView;
-	VkImageView textureImageView2;
+	std::vector<VkImageView> textureImageView;
 	VkSampler textureSampler;
 
 	// Vertex Buffer, Index Buffer
@@ -339,9 +336,26 @@ private:
 		createDepthResources(); // recreate 과정에서 호출
 		createFramebuffers(); // recreate 과정에서 호출
 		createCommandPool();
-		createTextureImage(textureImage, textureImageMemory, "textures/earth.jpg");
-		createTextureImage(textureImage2, textureImageMemory2, "textures/sun.jpg");
+
+		// texture initialize
+		textureImage.resize(12);
+		textureImageMemory.resize(12);
+
+		createTextureImage(textureImage[0], textureImageMemory[0], "./textures/sun.jpg");
+		createTextureImage(textureImage[1], textureImageMemory[1], "./textures/mercury.jpg");
+		createTextureImage(textureImage[2], textureImageMemory[2], "./textures/venus.jpg");
+		createTextureImage(textureImage[3], textureImageMemory[3], "./textures/earth.jpg");
+		createTextureImage(textureImage[4], textureImageMemory[4], "./textures/mars.jpg");
+		createTextureImage(textureImage[5], textureImageMemory[5], "./textures/jupiter.jpg");
+		createTextureImage(textureImage[6], textureImageMemory[6], "./textures/saturn.jpg");
+		createTextureImage(textureImage[7], textureImageMemory[7], "./textures/uranus.jpg");
+		createTextureImage(textureImage[8], textureImageMemory[8], "./textures/neptune.jpg");
+		createTextureImage(textureImage[9], textureImageMemory[9], "./textures/moon.jpg");
+		createTextureImage(textureImage[10], textureImageMemory[10], "./textures/saturn-ring.jpg");
+		createTextureImage(textureImage[11], textureImageMemory[11], "./textures/saturn-ring-alpha.jpg");
+
 		createTextureImageView();
+
 		createTextureSampler();
 		createVerticesAndIndices(); // 시점 상관 없음
 		createVertexBuffer();
@@ -356,7 +370,7 @@ private:
 		for (int i = 0; i < (int)planet_list.size(); i++) {
 			createUniformBuffers(uniformBuffers[i], uniformBuffersMemory[i]); // recreate 과정에서 호출
 			createDescriptorPool(descriptorPool[i]); // recreate 과정에서 호출
-			createDescriptorSets(descriptorSets[i], descriptorPool[i], uniformBuffers[i], textureImageView); // recreate 과정에서 호출
+			createDescriptorSets(descriptorSets[i], descriptorPool[i], uniformBuffers[i], textureImageView[planet_list[i].planet_texture_index]); // recreate 과정에서 호출
 		}
 		createCommandBuffers(); // recreate 과정에서 호출
 		createSyncObjects();
@@ -376,16 +390,16 @@ private:
 
 		cleanupSwapChain();
 
-		// Texture Image View
 		vkDestroySampler(device, textureSampler, nullptr);
-		vkDestroyImageView(device, textureImageView, nullptr);
-		vkDestroyImageView(device, textureImageView2, nullptr);
+		for (int i = 0; i < (int)textureImageView.size(); i++) {
 
-		// Texture Image
-		vkDestroyImage(device, textureImage, nullptr);
-		vkFreeMemory(device, textureImageMemory, nullptr);
-		vkDestroyImage(device, textureImage2, nullptr);
-		vkFreeMemory(device, textureImageMemory2, nullptr);
+			// Texture Image View
+			vkDestroyImageView(device, textureImageView[i], nullptr);
+
+			// Texture Image
+			vkDestroyImage(device, textureImage[i], nullptr);
+			vkFreeMemory(device, textureImageMemory[i], nullptr);
+		}
 
 		// Descriptor Layout
 		vkDestroyDescriptorSetLayout(device, descriptorSetLayout, nullptr);
@@ -839,7 +853,7 @@ private:
 		for (int i = 0; i < (int)planet_list.size(); i++) {
 			createUniformBuffers(uniformBuffers[i], uniformBuffersMemory[i]); // recreate 과정에서 호출
 			createDescriptorPool(descriptorPool[i]); // recreate 과정에서 호출
-			createDescriptorSets(descriptorSets[i], descriptorPool[i], uniformBuffers[i], textureImageView); // recreate 과정에서 호출
+			createDescriptorSets(descriptorSets[i], descriptorPool[i], uniformBuffers[i], textureImageView[planet_list[i].planet_texture_index]); // recreate 과정에서 호출
 		}
 		createCommandBuffers();
 	}
@@ -1408,8 +1422,10 @@ private:
 	//// Texture Image View
 
 	void createTextureImageView() {
-		textureImageView = createImageView(textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT);
-		textureImageView2 = createImageView(textureImage2, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT);
+		textureImageView.resize(textureImage.size());
+		for (int i = 0; i < (int)textureImage.size(); i++) {
+			textureImageView[i] = createImageView(textureImage[i], VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT);
+		}
 	}
 
 	VkImageView createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags) {
@@ -1748,7 +1764,7 @@ private:
 			renderPassInfo.renderArea.extent = swapChainExtent;
 
 			std::array<VkClearValue, 2> clearValues = {};
-			clearValues[0].color = { 0.0f, 0.0f, 0.0f, 1.0f };
+			clearValues[0].color = { 3 / 255.0f, 4 / 255.0f, 3 / 255.0f, 1.0f };
 			clearValues[1].depthStencil = { 1.0f, 0 };
 
 			renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
