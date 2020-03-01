@@ -231,35 +231,35 @@ void createPlanets() {
 
 	planet_list.clear();
 
-	planet_list.push_back(Planet(-1, 0, 0, 0.0f, 5.4f, 5.2f, 0.0f));       // Sun
-	planet_list.push_back(Planet(-1, 0, 1, 9.9f, 0.6f, 7.7f, 3.1f));       // Mercury
-	planet_list.push_back(Planet(-1, 0, 2, 15.8f, 1.0f, 15.6f, 3.9f));     // Venus
-	planet_list.push_back(Planet(-1, 0, 3, 19.3f, 1.0f, 1.0f, 4.4f));      // Earth
-	planet_list.push_back(Planet(-1, 0, 4, 24.2f, 0.7f, 1.0f, 5.1f));      // Mars
-	planet_list.push_back(Planet(-1, 0, 5, 36.8f, 3.3f, 0.6f, 8.1f));      // Jupiter
-	planet_list.push_back(Planet(-1, 0, 6, 61.4f, 3.1f, 0.6f, 10.2f));     // Saturn
-	planet_list.push_back(Planet(-1, 0, 7, 82.6f, 2.0f, 0.8f, 13.2f));     // Uranus
-	planet_list.push_back(Planet(-1, 0, 8, 103.6f, 2.0f, 0.8f, 15.6f));     // Neptune
+	planet_list.push_back(Planet(-1, 0, 0, 12, 0.0f, 5.4f, 5.2f, 0.0f));       // Sun
+	planet_list.push_back(Planet(-1, 0, 1, 12, 9.9f, 0.6f, 7.7f, 3.1f));       // Mercury
+	planet_list.push_back(Planet(-1, 0, 2, 12, 15.8f, 1.0f, 15.6f, 3.9f));     // Venus
+	planet_list.push_back(Planet(-1, 0, 3, 12, 19.3f, 1.0f, 1.0f, 4.4f));      // Earth
+	planet_list.push_back(Planet(-1, 0, 4, 12, 24.2f, 0.7f, 1.0f, 5.1f));      // Mars
+	planet_list.push_back(Planet(-1, 0, 5, 12, 36.8f, 3.3f, 0.6f, 8.1f));      // Jupiter
+	planet_list.push_back(Planet(-1, 0, 6, 12, 61.4f, 3.1f, 0.6f, 10.2f));     // Saturn
+	planet_list.push_back(Planet(-1, 0, 7, 12, 82.6f, 2.0f, 0.8f, 13.2f));     // Uranus
+	planet_list.push_back(Planet(-1, 0, 8, 12, 103.6f, 2.0f, 0.8f, 15.6f));     // Neptune
 
 	// Setellite instance
-	planet_list.push_back(Planet(3, 0, 9, 2.5f, 0.3f, 27.3f, 1.0f));  // Moon (Setellite of the Earth)
+	planet_list.push_back(Planet(3, 0, 9, 12, 2.5f, 0.3f, 27.3f, 1.0f));  // Moon (Setellite of the Earth)
 
-	planet_list.push_back(Planet(5, 0, 9, 4.0f, 0.4f, 0.4f, 0.4f));  // Io (Setellite of the Jupiter)
-	planet_list.push_back(Planet(5, 0, 9, 8.5f, 0.5f, 4.0f, 4.0f));  // Callisto (Setellite of the Jupiter)
-	planet_list.push_back(Planet(5, 0, 9, 5.0f, 0.3f, 0.8f, 0.8f));  // Europa (Setellite of the Jupiter)
-	planet_list.push_back(Planet(5, 0, 9, 7.0f, 0.6f, 2.0f, 2.0f));  // Ganymede (Setellite of the Jupiter)
+	planet_list.push_back(Planet(5, 0, 9, 12, 4.0f, 0.4f, 0.4f, 0.4f));  // Io (Setellite of the Jupiter)
+	planet_list.push_back(Planet(5, 0, 9, 12, 8.5f, 0.5f, 4.0f, 4.0f));  // Callisto (Setellite of the Jupiter)
+	planet_list.push_back(Planet(5, 0, 9, 12, 5.0f, 0.3f, 0.8f, 0.8f));  // Europa (Setellite of the Jupiter)
+	planet_list.push_back(Planet(5, 0, 9, 12, 7.0f, 0.6f, 2.0f, 2.0f));  // Ganymede (Setellite of the Jupiter)
 
-	planet_list.push_back(Planet(7, 0, 9, 3.8f, 0.3f, 0.4f, 0.4f));  // Miranda (Setellite of the Uranus)
-	planet_list.push_back(Planet(7, 0, 9, 5.0f, 0.5f, 0.5f, 0.5f));  // Ariel (Setellite of the Uranus)
-	planet_list.push_back(Planet(7, 0, 9, 6.5f, 0.5f, 0.6f, 0.6f));  // Umbriel (Setellite of the Uranus)
-	planet_list.push_back(Planet(7, 0, 9, 8.0f, 0.7f, 0.8f, 0.8f));  // Titania (Setellite of the Uranus)
-	planet_list.push_back(Planet(7, 0, 9, 10.0f, 0.7f, 1.3f, 1.3f));  // Oberon (Setellite of the Uranus)
+	planet_list.push_back(Planet(7, 0, 9, 12, 3.8f, 0.3f, 0.4f, 0.4f));  // Miranda (Setellite of the Uranus)
+	planet_list.push_back(Planet(7, 0, 9, 12, 5.0f, 0.5f, 0.5f, 0.5f));  // Ariel (Setellite of the Uranus)
+	planet_list.push_back(Planet(7, 0, 9, 12, 6.5f, 0.5f, 0.6f, 0.6f));  // Umbriel (Setellite of the Uranus)
+	planet_list.push_back(Planet(7, 0, 9, 12, 8.0f, 0.7f, 0.8f, 0.8f));  // Titania (Setellite of the Uranus)
+	planet_list.push_back(Planet(7, 0, 9, 12, 10.0f, 0.7f, 1.3f, 1.3f));  // Oberon (Setellite of the Uranus)
 
-	planet_list.push_back(Planet(8, 0, 9, 5.0f, 0.8f, -0.6f, -0.6f));  // Triton (Setellite of the Neptune)
-	planet_list.push_back(Planet(8, 0, 9, 7.0f, 0.5f, 1.1f, 30.0f));  // Oberon (Setellite of the Neptune)
+	planet_list.push_back(Planet(8, 0, 9, 12, 5.0f, 0.8f, -0.6f, -0.6f));  // Triton (Setellite of the Neptune)
+	planet_list.push_back(Planet(8, 0, 9, 12, 7.0f, 0.5f, 1.1f, 30.0f));  // Oberon (Setellite of the Neptune)
 
 	// Ring
-	planet_list.push_back(Planet(6, 1, 10, 0.0f, 6.2f, 0.0f, 0.0f));     // Saturn
+	planet_list.push_back(Planet(6, 1, 10, 11, 0.0f, 6.2f, 0.0f, 0.0f));     // Saturn
 }
 
 
@@ -404,8 +404,8 @@ private:
 		createCommandPool();
 
 		// texture initialize
-		textureImage.resize(12);
-		textureImageMemory.resize(12);
+		textureImage.resize(13);
+		textureImageMemory.resize(13);
 
 		createTextureImage(textureImage[0], textureImageMemory[0], "./textures/sun.jpg");
 		createTextureImage(textureImage[1], textureImageMemory[1], "./textures/mercury.jpg");
@@ -419,6 +419,7 @@ private:
 		createTextureImage(textureImage[9], textureImageMemory[9], "./textures/moon.jpg");
 		createTextureImage(textureImage[10], textureImageMemory[10], "./textures/saturn-ring.jpg");
 		createTextureImage(textureImage[11], textureImageMemory[11], "./textures/saturn-ring-alpha.jpg");
+		createWhiteDotImage(textureImage[12], textureImageMemory[12]);
 
 		createTextureImageView();
 
@@ -438,7 +439,7 @@ private:
 		for (int i = 0; i < (int)planet_list.size(); i++) {
 			createUniformBuffers(uniformBuffers[i], uniformBuffersMemory[i]); // recreate 과정에서 호출
 			createDescriptorPool(descriptorPool[i]); // recreate 과정에서 호출
-			createDescriptorSets(descriptorSets[i], descriptorPool[i], uniformBuffers[i], textureImageView[planet_list[i].planet_texture_index]); // recreate 과정에서 호출
+			createDescriptorSets(descriptorSets[i], descriptorPool[i], uniformBuffers[i], planet_list[i]); // recreate 과정에서 호출
 		}
 		createCommandBuffers(); // recreate 과정에서 호출
 		createSyncObjects();
@@ -925,7 +926,7 @@ private:
 		for (int i = 0; i < (int)planet_list.size(); i++) {
 			createUniformBuffers(uniformBuffers[i], uniformBuffersMemory[i]); // recreate 과정에서 호출
 			createDescriptorPool(descriptorPool[i]); // recreate 과정에서 호출
-			createDescriptorSets(descriptorSets[i], descriptorPool[i], uniformBuffers[i], textureImageView[planet_list[i].planet_texture_index]); // recreate 과정에서 호출
+			createDescriptorSets(descriptorSets[i], descriptorPool[i], uniformBuffers[i], planet_list[i]); // recreate 과정에서 호출
 		}
 		createCommandBuffers();
 	}
@@ -1087,7 +1088,7 @@ private:
 
 		VkDescriptorSetLayoutBinding samplerLayoutBinding = {};
 		samplerLayoutBinding.binding = 1;
-		samplerLayoutBinding.descriptorCount = 1;
+		samplerLayoutBinding.descriptorCount = 2;
 		samplerLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 		samplerLayoutBinding.pImmutableSamplers = nullptr;
 		samplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
@@ -1190,7 +1191,7 @@ private:
 		colorBlendAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
 		colorBlendAttachment.blendEnable = VK_TRUE;
 		colorBlendAttachment.srcColorBlendFactor = VK_BLEND_FACTOR_ONE;
-		colorBlendAttachment.dstColorBlendFactor = VK_BLEND_FACTOR_ZERO;
+		colorBlendAttachment.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
 		colorBlendAttachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
 		colorBlendAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
 
@@ -1355,6 +1356,33 @@ private:
 
 
 	//// Texture Image
+
+	void createWhiteDotImage(VkImage& targetImage, VkDeviceMemory& targetImageMemory) {
+
+		stbi_uc pixels[4] = { 0xFF, 0xFF, 0xFF, 0xFF };
+		int texWidth = 1, texHeight = 1;
+		VkDeviceSize imageSize = 4;
+
+		// 이후 아래 메서드와 동일
+		VkBuffer stagingBuffer;
+		VkDeviceMemory stagingBufferMemory;
+		createBuffer(imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
+
+		void* data;
+		vkMapMemory(device, stagingBufferMemory, 0, imageSize, 0, &data);
+		memcpy(data, pixels, static_cast<size_t>(imageSize));
+		vkUnmapMemory(device, stagingBufferMemory);
+
+		createImage(texWidth, texHeight, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, targetImage, targetImageMemory);
+
+		transitionImageLayout(targetImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+		copyBufferToImage(stagingBuffer, targetImage, static_cast<uint32_t>(texWidth), static_cast<uint32_t>(texHeight));
+		transitionImageLayout(targetImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+
+		vkDestroyBuffer(device, stagingBuffer, nullptr);
+		vkFreeMemory(device, stagingBufferMemory, nullptr);
+
+	}
 
 	void createTextureImage(VkImage& targetImage, VkDeviceMemory& targetImageMemory, const char* fileName) {
 		int texWidth, texHeight, texChannels;
@@ -1749,7 +1777,7 @@ private:
 		poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 		poolSizes[0].descriptorCount = static_cast<uint32_t>(swapChainImages.size());
 		poolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-		poolSizes[1].descriptorCount = static_cast<uint32_t>(swapChainImages.size());
+		poolSizes[1].descriptorCount = static_cast<uint32_t>(swapChainImages.size()) * 2;
 
 		VkDescriptorPoolCreateInfo poolInfo = {};
 		poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
@@ -1762,7 +1790,7 @@ private:
 		}
 	}
 
-	void createDescriptorSets(std::vector<VkDescriptorSet>& targetDescriptorSets, VkDescriptorPool& targetDescriptorPool, std::vector<VkBuffer>& targetUniformBuffers, VkImageView& targetImageView) {
+	void createDescriptorSets(std::vector<VkDescriptorSet>& targetDescriptorSets, VkDescriptorPool& targetDescriptorPool, std::vector<VkBuffer>& targetUniformBuffers, Planet& targetPlanet) {
 		std::vector<VkDescriptorSetLayout> layouts(swapChainImages.size(), descriptorSetLayout);
 
 		VkDescriptorSetAllocateInfo allocInfo = {};
@@ -1784,10 +1812,16 @@ private:
 
 			VkDescriptorImageInfo imageInfo = {};
 			imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-			imageInfo.imageView = targetImageView;
+			imageInfo.imageView = textureImageView[targetPlanet.texture_index];
 			imageInfo.sampler = textureSampler;
 
+			VkDescriptorImageInfo imageInfoAlpha = {};
+			imageInfoAlpha.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+			imageInfoAlpha.imageView = textureImageView[targetPlanet.alpha_index];
+			imageInfoAlpha.sampler = textureSampler;
+
 			std::array<VkWriteDescriptorSet, 2> descriptorWrites = {};
+			std::array<VkDescriptorImageInfo, 2> imageInfos = { imageInfo, imageInfoAlpha };
 
 			descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 			descriptorWrites[0].dstSet = targetDescriptorSets[i];
@@ -1802,8 +1836,8 @@ private:
 			descriptorWrites[1].dstBinding = 1;
 			descriptorWrites[1].dstArrayElement = 0;
 			descriptorWrites[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-			descriptorWrites[1].descriptorCount = 1;
-			descriptorWrites[1].pImageInfo = &imageInfo;
+			descriptorWrites[1].descriptorCount = static_cast<uint32_t>(imageInfos.size());
+			descriptorWrites[1].pImageInfo = imageInfos.data();
 
 			vkUpdateDescriptorSets(device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
 		}
@@ -1858,7 +1892,7 @@ private:
 
 			for (int n = 0; n < (int)planet_list.size(); n++) {
 
-				switch (planet_list[n].planet_vertex_index) {
+				switch (planet_list[n].vertex_index) {
 				case 0:
 					vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, planetVertexBuffers, offsets); 
 					vkCmdBindIndexBuffer(commandBuffers[i], planetIndexBuffer, 0, VK_INDEX_TYPE_UINT16);
