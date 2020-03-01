@@ -7,6 +7,7 @@ class Planet {
 public:
 
 	uint parent_index; // parent planet index (-1 : no parent)
+	uint planet_vertex_index; // planet vertex index (used in render())
 	uint planet_texture_index; // planet texture index (used in render())
 
 	float distance; // distance from Sun
@@ -19,9 +20,10 @@ public:
 
 	Planet() {}
 
-	Planet(uint parent_index, uint planet_texture_index, float distance, float radius, float rotation_cycle, float revolution_cycle) {
+	Planet(uint parent_index, uint planet_vertex_index, uint planet_texture_index, float distance, float radius, float rotation_cycle, float revolution_cycle) {
 
 		this->parent_index = parent_index;
+		this->planet_vertex_index = planet_vertex_index;
 		this->planet_texture_index = planet_texture_index;
 		this->distance = distance;
 		this->radius = radius;

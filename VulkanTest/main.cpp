@@ -139,15 +139,17 @@ struct UniformBufferObject {
 static const uint NUM_TESS = 72; // initial tessellation factor of the "sphere" as a "polyhedron"
 static const float RADIUS = 1.0f;
 
-std::vector<Vertex> vertices;
-std::vector<ushort> indices;
+std::vector<Vertex> planet_vertex_list;
+std::vector<ushort> planet_index_list;
+std::vector<Vertex>	ring_vertex_list;
+std::vector<ushort>	ring_index_list;
 
 void createVerticesAndIndices()
 {
-	vertices.clear();
 
-	// Vertice Init
+	// Planet Vertex
 	// i : longitude, k : latitude
+	planet_vertex_list.clear();
 	for (uint i = 0; i <= NUM_TESS; i++) {
 
 		// t : theta - angle of longitude
@@ -163,22 +165,62 @@ void createVerticesAndIndices()
 			float c1 = t / 2 / PI;
 			float c2 = p / PI;
 
-			vertices.push_back({ {x, y, z}, {x, y, z}, {c1, c2} });
+			planet_vertex_list.push_back({ {x, y, z}, {x, y, z}, {c1, c2} });
 		}
 	}
 
-	indices.clear();
+	// Planet Index
+	planet_index_list.clear();
 	for (ushort i = 0; i <= NUM_TESS + 1; i++) {
 		for (ushort k = 0; k < NUM_TESS / 2; k++) {
-			indices.push_back(i * (NUM_TESS / 2) + k);
-			indices.push_back(i * (NUM_TESS / 2) + k + 1);
-			indices.push_back((i + 1) * (NUM_TESS / 2) + k + 1);
+			planet_index_list.push_back(i * (NUM_TESS / 2) + k);
+			planet_index_list.push_back(i * (NUM_TESS / 2) + k + 1);
+			planet_index_list.push_back((i + 1) * (NUM_TESS / 2) + k + 1);
 
-			indices.push_back((i + 1) * (NUM_TESS / 2) + k + 1);
-			indices.push_back((i + 1) * (NUM_TESS / 2) + k);
-			indices.push_back(i * (NUM_TESS / 2) + k);
+			planet_index_list.push_back((i + 1) * (NUM_TESS / 2) + k + 1);
+			planet_index_list.push_back((i + 1) * (NUM_TESS / 2) + k);
+			planet_index_list.push_back(i * (NUM_TESS / 2) + k);
 		}
 	}
+
+	// Ring Vertex
+	// i : longitude
+	ring_vertex_list.clear();
+	for (uint i = 0; i <= NUM_TESS; i++) {
+
+		// t : theta - angle of longitude
+		float t = PI*2.0f / float(NUM_TESS) * float(i);
+
+		float x = RADIUS * cos(t), y = RADIUS * sin(t);
+
+		ring_vertex_list.push_back({ {x * 1.0f, y * 1.0f, 0}, {x * 1.0f, y * 1.0f, 0}, {0, t} });
+		ring_vertex_list.push_back({ {x * 0.6f, y * 0.6f, 0}, {x * 0.6f, y * 0.6f, 0}, {1, t} });
+	}
+
+
+	// Ring Index
+	ring_index_list.clear();
+	for (uint i = 0; i <= NUM_TESS; i++) {
+
+		// like flatten doughnut
+
+		ring_index_list.push_back(i * 2);
+		ring_index_list.push_back(i * 2 + 1);
+		ring_index_list.push_back((i + 1) * 2 + 1);
+
+		ring_index_list.push_back((i + 1) * 2 + 1);
+		ring_index_list.push_back(i * 2 + 1);
+		ring_index_list.push_back(i * 2);
+
+		ring_index_list.push_back((i + 1) * 2 + 1);
+		ring_index_list.push_back((i + 1) * 2);
+		ring_index_list.push_back(i * 2);
+
+		ring_index_list.push_back(i * 2);
+		ring_index_list.push_back((i + 1) * 2);
+		ring_index_list.push_back((i + 1) * 2 + 1);
+	}
+
 }
 
 // Planet
@@ -189,33 +231,35 @@ void createPlanets() {
 
 	planet_list.clear();
 
-	planet_list.push_back(Planet(-1, 0, 0.0f, 5.4f, 5.2f, 0.0f));       // Sun
-	planet_list.push_back(Planet(-1, 1, 9.9f, 0.6f, 7.7f, 3.1f));       // Mercury
-	planet_list.push_back(Planet(-1, 2, 15.8f, 1.0f, 15.6f, 3.9f));     // Venus
-	planet_list.push_back(Planet(-1, 3, 19.3f, 1.0f, 1.0f, 4.4f));      // Earth
-	planet_list.push_back(Planet(-1, 4, 24.2f, 0.7f, 1.0f, 5.1f));      // Mars
-	planet_list.push_back(Planet(-1, 5, 36.8f, 3.3f, 0.6f, 8.1f));      // Jupiter
-	planet_list.push_back(Planet(-1, 6, 61.4f, 3.1f, 0.6f, 10.2f));     // Saturn
-	planet_list.push_back(Planet(-1, 7, 82.6f, 2.0f, 0.8f, 13.2f));     // Uranus
-	planet_list.push_back(Planet(-1, 8, 103.6f, 2.0f, 0.8f, 15.6f));     // Neptune
+	planet_list.push_back(Planet(-1, 0, 0, 0.0f, 5.4f, 5.2f, 0.0f));       // Sun
+	planet_list.push_back(Planet(-1, 0, 1, 9.9f, 0.6f, 7.7f, 3.1f));       // Mercury
+	planet_list.push_back(Planet(-1, 0, 2, 15.8f, 1.0f, 15.6f, 3.9f));     // Venus
+	planet_list.push_back(Planet(-1, 0, 3, 19.3f, 1.0f, 1.0f, 4.4f));      // Earth
+	planet_list.push_back(Planet(-1, 0, 4, 24.2f, 0.7f, 1.0f, 5.1f));      // Mars
+	planet_list.push_back(Planet(-1, 0, 5, 36.8f, 3.3f, 0.6f, 8.1f));      // Jupiter
+	planet_list.push_back(Planet(-1, 0, 6, 61.4f, 3.1f, 0.6f, 10.2f));     // Saturn
+	planet_list.push_back(Planet(-1, 0, 7, 82.6f, 2.0f, 0.8f, 13.2f));     // Uranus
+	planet_list.push_back(Planet(-1, 0, 8, 103.6f, 2.0f, 0.8f, 15.6f));     // Neptune
 
 	// Setellite instance
-	planet_list.push_back(Planet(3, 9, 2.5f, 0.3f, 27.3f, 1.0f));  // Moon (Setellite of the Earth)
+	planet_list.push_back(Planet(3, 0, 9, 2.5f, 0.3f, 27.3f, 1.0f));  // Moon (Setellite of the Earth)
 
-	planet_list.push_back(Planet(5, 9, 4.0f, 0.4f, 0.4f, 0.4f));  // Io (Setellite of the Jupiter)
-	planet_list.push_back(Planet(5, 9, 8.5f, 0.5f, 4.0f, 4.0f));  // Callisto (Setellite of the Jupiter)
-	planet_list.push_back(Planet(5, 9, 5.0f, 0.3f, 0.8f, 0.8f));  // Europa (Setellite of the Jupiter)
-	planet_list.push_back(Planet(5, 9, 7.0f, 0.6f, 2.0f, 2.0f));  // Ganymede (Setellite of the Jupiter)
+	planet_list.push_back(Planet(5, 0, 9, 4.0f, 0.4f, 0.4f, 0.4f));  // Io (Setellite of the Jupiter)
+	planet_list.push_back(Planet(5, 0, 9, 8.5f, 0.5f, 4.0f, 4.0f));  // Callisto (Setellite of the Jupiter)
+	planet_list.push_back(Planet(5, 0, 9, 5.0f, 0.3f, 0.8f, 0.8f));  // Europa (Setellite of the Jupiter)
+	planet_list.push_back(Planet(5, 0, 9, 7.0f, 0.6f, 2.0f, 2.0f));  // Ganymede (Setellite of the Jupiter)
 
-	planet_list.push_back(Planet(7, 9, 3.8f, 0.3f, 0.4f, 0.4f));  // Miranda (Setellite of the Uranus)
-	planet_list.push_back(Planet(7, 9, 5.0f, 0.5f, 0.5f, 0.5f));  // Ariel (Setellite of the Uranus)
-	planet_list.push_back(Planet(7, 9, 6.5f, 0.5f, 0.6f, 0.6f));  // Umbriel (Setellite of the Uranus)
-	planet_list.push_back(Planet(7, 9, 8.0f, 0.7f, 0.8f, 0.8f));  // Titania (Setellite of the Uranus)
-	planet_list.push_back(Planet(7, 9, 10.0f, 0.7f, 1.3f, 1.3f));  // Oberon (Setellite of the Uranus)
+	planet_list.push_back(Planet(7, 0, 9, 3.8f, 0.3f, 0.4f, 0.4f));  // Miranda (Setellite of the Uranus)
+	planet_list.push_back(Planet(7, 0, 9, 5.0f, 0.5f, 0.5f, 0.5f));  // Ariel (Setellite of the Uranus)
+	planet_list.push_back(Planet(7, 0, 9, 6.5f, 0.5f, 0.6f, 0.6f));  // Umbriel (Setellite of the Uranus)
+	planet_list.push_back(Planet(7, 0, 9, 8.0f, 0.7f, 0.8f, 0.8f));  // Titania (Setellite of the Uranus)
+	planet_list.push_back(Planet(7, 0, 9, 10.0f, 0.7f, 1.3f, 1.3f));  // Oberon (Setellite of the Uranus)
 
-	planet_list.push_back(Planet(8, 9, 5.0f, 0.8f, -0.6f, -0.6f));  // Triton (Setellite of the Neptune)
-	planet_list.push_back(Planet(8, 9, 7.0f, 0.5f, 1.1f, 30.0f));  // Oberon (Setellite of the Neptune)
+	planet_list.push_back(Planet(8, 0, 9, 5.0f, 0.8f, -0.6f, -0.6f));  // Triton (Setellite of the Neptune)
+	planet_list.push_back(Planet(8, 0, 9, 7.0f, 0.5f, 1.1f, 30.0f));  // Oberon (Setellite of the Neptune)
 
+	// Ring
+	planet_list.push_back(Planet(6, 1, 10, 0.0f, 6.2f, 0.0f, 0.0f));     // Saturn
 }
 
 
@@ -292,10 +336,14 @@ private:
 	VkSampler textureSampler;
 
 	// Vertex Buffer, Index Buffer
-	VkBuffer vertexBuffer;
-	VkDeviceMemory vertexBufferMemory;
-	VkBuffer indexBuffer;
-	VkDeviceMemory indexBufferMemory;
+	VkBuffer planetVertexBuffer;
+	VkDeviceMemory planetVertexBufferMemory;
+	VkBuffer planetIndexBuffer;
+	VkDeviceMemory planetIndexBufferMemory;
+	VkBuffer ringVertexBuffer;
+	VkDeviceMemory ringVertexBufferMemory;
+	VkBuffer ringIndexBuffer;
+	VkDeviceMemory ringIndexBufferMemory;
 
 	// Uniform Buffer
 	std::vector<std::vector<VkBuffer>> uniformBuffers;
@@ -376,8 +424,10 @@ private:
 
 		createTextureSampler();
 		createVerticesAndIndices(); // 시점 상관 없음
-		createVertexBuffer();
-		createIndexBuffer();
+		createVertexBuffer(planet_vertex_list, planetVertexBuffer, planetVertexBufferMemory);
+		createIndexBuffer(planet_index_list, planetIndexBuffer, planetIndexBufferMemory);
+		createVertexBuffer(ring_vertex_list, ringVertexBuffer, ringVertexBufferMemory);
+		createIndexBuffer(ring_index_list, ringIndexBuffer, ringIndexBufferMemory);
 		createPlanets();
 
 		uniformBuffers.resize(planet_list.size());
@@ -423,10 +473,14 @@ private:
 		vkDestroyDescriptorSetLayout(device, descriptorSetLayout, nullptr);
 
 		// Vertex Buffer, Index Buffer
-		vkDestroyBuffer(device, indexBuffer, nullptr);
-		vkFreeMemory(device, indexBufferMemory, nullptr);
-		vkDestroyBuffer(device, vertexBuffer, nullptr);
-		vkFreeMemory(device, vertexBufferMemory, nullptr);
+		vkDestroyBuffer(device, planetIndexBuffer, nullptr);
+		vkFreeMemory(device, planetIndexBufferMemory, nullptr);
+		vkDestroyBuffer(device, planetVertexBuffer, nullptr);
+		vkFreeMemory(device, planetVertexBufferMemory, nullptr);
+		vkDestroyBuffer(device, ringIndexBuffer, nullptr);
+		vkFreeMemory(device, ringIndexBufferMemory, nullptr);
+		vkDestroyBuffer(device, ringVertexBuffer, nullptr);
+		vkFreeMemory(device, ringVertexBufferMemory, nullptr);
 
 		// SyncObjects (Semaphore, Fence)
 		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
@@ -1490,8 +1544,8 @@ private:
 
 	//// Vertex Buffer, Index Buffer
 
-	void createVertexBuffer() {
-		VkDeviceSize bufferSize = sizeof(vertices[0]) * vertices.size();
+	void createVertexBuffer(std::vector<Vertex>& vertexList, VkBuffer& vertexBuffer, VkDeviceMemory& vertexBufferMemory) {
+		VkDeviceSize bufferSize = sizeof(vertexList[0]) * vertexList.size();
 
 		VkBuffer stagingBuffer;
 		VkDeviceMemory stagingBufferMemory;
@@ -1499,7 +1553,7 @@ private:
 
 		void* data;
 		vkMapMemory(device, stagingBufferMemory, 0, bufferSize, 0, &data);
-		memcpy(data, vertices.data(), (size_t)bufferSize);
+		memcpy(data, vertexList.data(), (size_t)bufferSize);
 		vkUnmapMemory(device, stagingBufferMemory);
 
 		createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, vertexBuffer, vertexBufferMemory);
@@ -1510,8 +1564,8 @@ private:
 		vkFreeMemory(device, stagingBufferMemory, nullptr);
 	}
 
-	void createIndexBuffer() {
-		VkDeviceSize bufferSize = sizeof(indices[0]) * indices.size();
+	void createIndexBuffer(std::vector<ushort>& indexList, VkBuffer& indexBuffer, VkDeviceMemory& indexBufferMemory) {
+		VkDeviceSize bufferSize = sizeof(indexList[0]) * indexList.size();
 
 		VkBuffer stagingBuffer;
 		VkDeviceMemory stagingBufferMemory;
@@ -1519,7 +1573,7 @@ private:
 
 		void* data;
 		vkMapMemory(device, stagingBufferMemory, 0, bufferSize, 0, &data);
-		memcpy(data, indices.data(), (size_t)bufferSize);
+		memcpy(data, indexList.data(), (size_t)bufferSize);
 		vkUnmapMemory(device, stagingBufferMemory);
 
 		createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, indexBuffer, indexBufferMemory);
@@ -1792,20 +1846,31 @@ private:
 
 			vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
 
-			VkBuffer vertexBuffers[] = { vertexBuffer };
+			VkBuffer planetVertexBuffers[] = { planetVertexBuffer };
+			VkBuffer ringVertexBuffers[] = { ringVertexBuffer };
 			VkDeviceSize offsets[] = { 0 };
 
 			// Draw Planet
 
 			for (int n = 0; n < (int)planet_list.size(); n++) {
 
-				vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, vertexBuffers, offsets);
+				switch (planet_list[n].planet_vertex_index) {
+				case 0:
+					vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, planetVertexBuffers, offsets); 
+					vkCmdBindIndexBuffer(commandBuffers[i], planetIndexBuffer, 0, VK_INDEX_TYPE_UINT16);
+					vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSets[n][i], 0, nullptr);
+					vkCmdDrawIndexed(commandBuffers[i], static_cast<uint32_t>(planet_index_list.size()), 1, 0, 0, 0);
+					break;
+				case 1:
+					vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, ringVertexBuffers, offsets); 
+					vkCmdBindIndexBuffer(commandBuffers[i], ringIndexBuffer, 0, VK_INDEX_TYPE_UINT16);
+					vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSets[n][i], 0, nullptr);
+					vkCmdDrawIndexed(commandBuffers[i], static_cast<uint32_t>(ring_index_list.size()), 1, 0, 0, 0);
+					break;
+				}
 
-				vkCmdBindIndexBuffer(commandBuffers[i], indexBuffer, 0, VK_INDEX_TYPE_UINT16);
 
-				vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSets[n][i], 0, nullptr);
 
-				vkCmdDrawIndexed(commandBuffers[i], static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
 
 			}
 
