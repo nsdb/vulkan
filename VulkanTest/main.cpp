@@ -90,7 +90,7 @@ struct SwapChainSupportDetails {
 // Vertex 관련
 struct Vertex {
 	glm::vec3 pos;
-	glm::vec3 color;
+	glm::vec3 norm;
 	glm::vec2 texCoord;
 
 	static VkVertexInputBindingDescription getBindingDescription() {
@@ -113,7 +113,7 @@ struct Vertex {
 		attributeDescriptions[1].binding = 0;
 		attributeDescriptions[1].location = 1;
 		attributeDescriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
-		attributeDescriptions[1].offset = offsetof(Vertex, color);
+		attributeDescriptions[1].offset = offsetof(Vertex, norm);
 
 		attributeDescriptions[2].binding = 0;
 		attributeDescriptions[2].location = 2;
@@ -127,9 +127,24 @@ struct Vertex {
 
 // Uniform Buffer
 struct UniformBufferObject {
-	alignas(16) glm::mat4 model;
-	alignas(16) glm::mat4 view;
-	alignas(16) glm::mat4 proj;
+
+	// model
+	glm::mat4 model;
+
+	// camera
+	glm::mat4 view;
+	glm::mat4 proj;
+
+	// light
+	glm::vec4 light;
+	glm::vec4 ambient;
+	glm::vec4 diffuse;
+	glm::vec4 specular;
+	float shininess;
+
+	// option
+	bool applyLight;
+
 };
 
 
@@ -1093,7 +1108,14 @@ private:
 		samplerLayoutBinding.pImmutableSamplers = nullptr;
 		samplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 
-		std::array<VkDescriptorSetLayoutBinding, 2> bindings = { uboLayoutBinding, samplerLayoutBinding };
+		VkDescriptorSetLayoutBinding uboLayoutBinding2 = {};
+		uboLayoutBinding2.binding = 2;
+		uboLayoutBinding2.descriptorCount = 1;
+		uboLayoutBinding2.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		uboLayoutBinding2.pImmutableSamplers = nullptr;
+		uboLayoutBinding2.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+
+		std::array<VkDescriptorSetLayoutBinding, 3> bindings = { uboLayoutBinding, samplerLayoutBinding, uboLayoutBinding2 };
 		VkDescriptorSetLayoutCreateInfo layoutInfo = {};
 		layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
 		layoutInfo.bindingCount = static_cast<uint32_t>(bindings.size());
@@ -1756,9 +1778,20 @@ private:
 
 			}
 
+			// camera
 			ubo.view = glm::lookAt(glm::vec3(0.0f, 100.0f, 20.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 			ubo.proj = glm::perspective(glm::radians(45.0f), swapChainExtent.width / (float)swapChainExtent.height, 1.0f, 1000.0f); // 4번째 항이 최대 시야
 			ubo.proj[1][1] *= -1;
+
+
+			// light
+			ubo.light = { 0.0f, 0.0f, 0.0f, 1.0f };   // non-directional light
+			ubo.ambient = { 0.0f, 0.0f, 0.0f, 1.0f };
+			ubo.diffuse = { 1.0f, 1.0f, 1.0f, 1.0f };
+			ubo.specular = { 1.0f, 1.0f, 1.0f, 1.0f };
+			ubo.shininess = 1000.0f;
+			ubo.applyLight = i != 0;
+
 
 			void* data;
 			vkMapMemory(device, uniformBuffersMemory[i][currentImage], 0, sizeof(ubo), 0, &data);
@@ -1773,11 +1806,13 @@ private:
 	//// Descriptor Pool, Sets
 
 	void createDescriptorPool(VkDescriptorPool& targetDescriptorPool) {
-		std::array<VkDescriptorPoolSize, 2> poolSizes = {};
+		std::array<VkDescriptorPoolSize, 3> poolSizes = {};
 		poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 		poolSizes[0].descriptorCount = static_cast<uint32_t>(swapChainImages.size());
 		poolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 		poolSizes[1].descriptorCount = static_cast<uint32_t>(swapChainImages.size()) * 2;
+		poolSizes[2].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		poolSizes[2].descriptorCount = static_cast<uint32_t>(swapChainImages.size());
 
 		VkDescriptorPoolCreateInfo poolInfo = {};
 		poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
@@ -1820,7 +1855,7 @@ private:
 			imageInfoAlpha.imageView = textureImageView[targetPlanet.alpha_index];
 			imageInfoAlpha.sampler = textureSampler;
 
-			std::array<VkWriteDescriptorSet, 2> descriptorWrites = {};
+			std::array<VkWriteDescriptorSet, 3> descriptorWrites = {};
 			std::array<VkDescriptorImageInfo, 2> imageInfos = { imageInfo, imageInfoAlpha };
 
 			descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -1838,6 +1873,15 @@ private:
 			descriptorWrites[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 			descriptorWrites[1].descriptorCount = static_cast<uint32_t>(imageInfos.size());
 			descriptorWrites[1].pImageInfo = imageInfos.data();
+
+			descriptorWrites[2].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+			descriptorWrites[2].dstSet = targetDescriptorSets[i];
+			descriptorWrites[2].dstBinding = 2;
+			descriptorWrites[2].dstArrayElement = 0;
+			descriptorWrites[2].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+			descriptorWrites[2].descriptorCount = 1;
+			descriptorWrites[2].pBufferInfo = &bufferInfo;
+
 
 			vkUpdateDescriptorSets(device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
 		}
