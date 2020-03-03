@@ -25,6 +25,7 @@
 
 #include "cgmath.h"
 #include "Planet.h"
+#include "Trackball.h"
 
 ivec2 window_size = ivec2(1280, 720); // initial window size
 
@@ -127,14 +128,30 @@ struct CameraInfo {
 	glm::vec3 eye = { 0.0f, 100.0f, 20.0f };
 	glm::vec3 at = { 0.0f, 0.0f, 0.0f };
 	glm::vec3 up = { 0.0f, 0.0f, 1.0f };
+	glm::mat4 viewMatrix;
 
 	float fovy = glm::radians(45.0f);
 	float aspect = (float)window_size.x / window_size.y;
 	float sightNear = 1.0f;
 	float sightFar = 1000.0f;
+	glm::mat4 projMatrix;
+
+	CameraInfo() {
+		viewMatrix = glm::lookAt(eye, at, up);
+		projMatrix = glm::perspective(fovy, aspect, sightNear, sightFar);
+		projMatrix[1][1] *= -1;
+	}
+
+	void updateProjectionMatrix(int width, int height) {
+		aspect = (float)width / height;
+		projMatrix = glm::perspective(fovy, aspect, sightNear, sightFar);
+		projMatrix[1][1] *= -1;
+	}
 };
 CameraInfo cameraInfo;
-
+Trackball trackball;
+bool bShiftKeyPressed = false;
+bool bCtrlKeyPressed = false;
 
 
 
@@ -408,6 +425,8 @@ private:
 
 		glfwSetFramebufferSizeCallback(window, framebufferResizeCallback);      // callback for window resizing events
 		glfwSetKeyCallback(window, keyboardCallback);			                // callback for keyboard events
+		glfwSetMouseButtonCallback(window, mouseCallback);                      // callback for mouse click inputs
+		glfwSetCursorPosCallback(window, motionCallback);                       // callback for mouse movement
 
 		printHelp();
 	}
@@ -415,7 +434,7 @@ private:
 	static void framebufferResizeCallback(GLFWwindow* window, int width, int height) {
 		auto app = reinterpret_cast<HelloTriangleApplication*>(glfwGetWindowUserPointer(window));
 		app->framebufferResized = true;
-		cameraInfo.aspect = (float)width / height;
+		cameraInfo.updateProjectionMatrix(width, height);
 	}
 
 	static void keyboardCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
@@ -424,30 +443,73 @@ private:
 		{
 			if (key == GLFW_KEY_ESCAPE || key == GLFW_KEY_Q)	glfwSetWindowShouldClose(window, GL_TRUE);
 			else if (key == GLFW_KEY_H || key == GLFW_KEY_F1)	printHelp();
-			//else if (key == GLFW_KEY_HOME)					memcpy(&cam, &camera(), sizeof(camera));
+			else if (key == GLFW_KEY_HOME)					    cameraInfo = {};
 			//else if (key == GLFW_KEY_W)
 			//{
 			//	bWireframe = !bWireframe;
 			//	glPolygonMode(GL_FRONT_AND_BACK, bWireframe ? GL_LINE : GL_FILL);
 			//	printf("> using %s mode\n", bWireframe ? "wireframe" : "solid");
 			//}
-			//else if (key == GLFW_KEY_LEFT_SHIFT || key == GLFW_KEY_RIGHT_SHIFT) {
-			//	bShiftKeyPressed = true;
-			//}
-			//else if (key == GLFW_KEY_LEFT_CONTROL || key == GLFW_KEY_RIGHT_CONTROL) {
-			//	bCtrlKeyPressed = true;
-			//}
+			else if (key == GLFW_KEY_LEFT_SHIFT || key == GLFW_KEY_RIGHT_SHIFT) {
+				bShiftKeyPressed = true;
+			}
+			else if (key == GLFW_KEY_LEFT_CONTROL || key == GLFW_KEY_RIGHT_CONTROL) {
+				bCtrlKeyPressed = true;
+			}
 		}
 		else if (action == GLFW_RELEASE) {
-			//if (key == GLFW_KEY_LEFT_SHIFT || key == GLFW_KEY_RIGHT_SHIFT) {
-			//	bShiftKeyPressed = false;
-			//}
-			//else if (key == GLFW_KEY_LEFT_CONTROL || key == GLFW_KEY_RIGHT_CONTROL) {
-			//	bCtrlKeyPressed = false;
-			//}
+			if (key == GLFW_KEY_LEFT_SHIFT || key == GLFW_KEY_RIGHT_SHIFT) {
+				bShiftKeyPressed = false;
+			}
+			else if (key == GLFW_KEY_LEFT_CONTROL || key == GLFW_KEY_RIGHT_CONTROL) {
+				bCtrlKeyPressed = false;
+			}
 		}
 	}
 
+	static void mouseCallback(GLFWwindow* window, int button, int action, int mods)
+	{
+		int mode;
+		switch (button) {
+
+		case GLFW_MOUSE_BUTTON_LEFT:
+			if (bShiftKeyPressed) {
+				mode = MODE_ZOOM;
+			}
+			else if (bCtrlKeyPressed) {
+				mode = MODE_PANNING;
+			}
+			else {
+				mode = MODE_ROTATION;
+			}
+			break;
+
+		case GLFW_MOUSE_BUTTON_RIGHT:
+			mode = MODE_ZOOM;
+			break;
+
+		case GLFW_MOUSE_BUTTON_MIDDLE:
+			mode = MODE_PANNING;
+			break;
+
+		default:
+			return;
+
+		}
+
+		dvec2 pos; glfwGetCursorPos(window, &pos.x, &pos.y);
+		vec2 npos = vec2(float(pos.x) / float(window_size.x - 1), float(pos.y) / float(window_size.y - 1));
+		if (action == GLFW_PRESS)			trackball.begin(cameraInfo.viewMatrix, npos.x, npos.y, mode);
+		else if (action == GLFW_RELEASE)	trackball.end();
+
+	}
+
+	static void motionCallback(GLFWwindow* window, double x, double y)
+	{
+		if (!trackball.bTracking) return;
+		vec2 npos = vec2(float(x) / float(window_size.x - 1), float(y) / float(window_size.y - 1));
+		cameraInfo.viewMatrix = trackball.update(npos.x, npos.y);
+	}
 
 
 	static void printHelp() {
@@ -985,7 +1047,7 @@ private:
 			glfwGetFramebufferSize(window, &window_size.x, &window_size.y);
 			glfwWaitEvents();
 		}
-		cameraInfo.aspect = (float)window_size.x / window_size.y;
+		cameraInfo.updateProjectionMatrix(window_size.x, window_size.y);
 		vkDeviceWaitIdle(device);
 
 
@@ -1838,9 +1900,8 @@ private:
 			}
 
 			// camera
-			ubo.view = glm::lookAt(cameraInfo.eye, cameraInfo.at, cameraInfo.up);
-			ubo.proj = glm::perspective(cameraInfo.fovy, cameraInfo.aspect, cameraInfo.sightNear, cameraInfo.sightFar);
-			ubo.proj[1][1] *= -1;
+			ubo.view = cameraInfo.viewMatrix;
+			ubo.proj = cameraInfo.projMatrix;
 
 			// light
 			ubo.light = { 0.0f, 0.0f, 0.0f, 1.0f };   // non-directional light
