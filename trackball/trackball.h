@@ -6,7 +6,7 @@
 #define MODE_PANNING    2
 
 
-struct trackball
+struct Trackball
 {
 	bool	bTracking;
 	float	scale;			// controls how much rotation is applied
@@ -14,7 +14,7 @@ struct trackball
 	vec2	m0;				// the last mouse position
 	int     mode;           // mode of trackball (rotation, zoom, panning)
 
-	trackball( float rot_scale=1.0f ):bTracking(false),scale(rot_scale){}
+	Trackball( float rot_scale=1.0f ):bTracking(false),scale(rot_scale){}
 
 	void end(){ bTracking=false; }
 	void begin( const mat4& view_matrix, float x, float y, int mode )

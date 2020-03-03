@@ -18,7 +18,7 @@ static const uint   NUM_TEXTURE = 12;  // number of texture
 
 //*******************************************************************
 // common structures
-struct camera
+struct CameraInfo
 {
 	vec3	eye = vec3( 0, 100, 0 );
 	vec3	at = vec3( 0, 0, 0 );
@@ -32,7 +32,7 @@ struct camera
 	mat4	projection_matrix;
 };
 
-struct light_t
+struct LightInfo
 {
 	vec4	position = vec4(0.0f, 0.0f, 0.0f, 1.0f);   // non-directional light
 	vec4	ambient = vec4(0.0f, 0.0f, 0.0f, 1.0f);
@@ -74,9 +74,9 @@ std::vector<uint>	ring_index_list;		// host-side indices (Ring)
 
 //*******************************************************************
 // scene objects
-camera		cam;
-trackball	tb;
-light_t		light;
+CameraInfo cameraInfo;
+Trackball trackball;
+LightInfo lightInfo;
 std::vector<Planet> planet_list;    // planet list
 float planet_shininess = 1000.0f;   // shininess of planet
 uint saturn_ring_parent_index = -1;// parent index of saturn ring (saturn index)
@@ -87,8 +87,8 @@ float saturn_ring_radius = 0.0f;    // radius of saturn ring
 void update()
 {
 	// update projection matrix
-	cam.aspect_ratio = window_size.x/float(window_size.y);
-	cam.projection_matrix = mat4::perspective( cam.fovy, cam.aspect_ratio, cam.dNear, cam.dFar );
+	cameraInfo.aspect_ratio = window_size.x/float(window_size.y);
+	cameraInfo.projection_matrix = mat4::perspective( cameraInfo.fovy, cameraInfo.aspect_ratio, cameraInfo.dNear, cameraInfo.dFar );
 
 	// update planet rotation, revolution
 	float elapsed_time = (float)glfwGetTime() - current_time;
@@ -99,14 +99,14 @@ void update()
 
 	// update uniform variables in vertex/fragment shaders
 	GLint uloc;
-	uloc = glGetUniformLocation( program, "view_matrix" );			if(uloc>-1) glUniformMatrix4fv( uloc, 1, GL_TRUE, cam.view_matrix );
-	uloc = glGetUniformLocation( program, "projection_matrix" );	if(uloc>-1) glUniformMatrix4fv( uloc, 1, GL_TRUE, cam.projection_matrix );
+	uloc = glGetUniformLocation( program, "view_matrix" );			if(uloc>-1) glUniformMatrix4fv( uloc, 1, GL_TRUE, cameraInfo.view_matrix );
+	uloc = glGetUniformLocation( program, "projection_matrix" );	if(uloc>-1) glUniformMatrix4fv( uloc, 1, GL_TRUE, cameraInfo.projection_matrix );
 
 	// setup light properties
-	uloc = glGetUniformLocation(program, "light_position");			if (uloc>-1) glUniform4fv(uloc, 1, light.position);
-	uloc = glGetUniformLocation(program, "Ia");						if (uloc>-1) glUniform4fv(uloc, 1, light.ambient);
-	uloc = glGetUniformLocation(program, "Id");						if (uloc>-1) glUniform4fv(uloc, 1, light.diffuse);
-	uloc = glGetUniformLocation(program, "Is");						if (uloc>-1) glUniform4fv(uloc, 1, light.specular);
+	uloc = glGetUniformLocation(program, "light_position");			if (uloc>-1) glUniform4fv(uloc, 1, lightInfo.position);
+	uloc = glGetUniformLocation(program, "Ia");						if (uloc>-1) glUniform4fv(uloc, 1, lightInfo.ambient);
+	uloc = glGetUniformLocation(program, "Id");						if (uloc>-1) glUniform4fv(uloc, 1, lightInfo.diffuse);
+	uloc = glGetUniformLocation(program, "Is");						if (uloc>-1) glUniform4fv(uloc, 1, lightInfo.specular);
 
 	// setup material properties
 	uloc = glGetUniformLocation(program, "shininess");				if (uloc>-1) glUniform1f(uloc, planet_shininess);
@@ -234,7 +234,7 @@ void keyboard( GLFWwindow* window, int key, int scancode, int action, int mods )
 	{
 		if(key==GLFW_KEY_ESCAPE||key==GLFW_KEY_Q)	glfwSetWindowShouldClose( window, GL_TRUE );
 		else if(key==GLFW_KEY_H||key==GLFW_KEY_F1)	print_help();
-		else if(key==GLFW_KEY_HOME)					memcpy(&cam,&camera(),sizeof(camera));
+		else if(key==GLFW_KEY_HOME)					memcpy(&cameraInfo,&CameraInfo(),sizeof(CameraInfo));
 		else if (key == GLFW_KEY_W)
 		{
 			bWireframe = !bWireframe;
@@ -290,16 +290,16 @@ void mouse( GLFWwindow* window, int button, int action, int mods )
 
 	dvec2 pos; glfwGetCursorPos(window,&pos.x,&pos.y);
 	vec2 npos = vec2( float(pos.x)/float(window_size.x-1), float(pos.y)/float(window_size.y-1) );
-	if(action==GLFW_PRESS)			tb.begin( cam.view_matrix, npos.x, npos.y, mode);
-	else if(action==GLFW_RELEASE)	tb.end();
+	if(action==GLFW_PRESS)			trackball.begin( cameraInfo.view_matrix, npos.x, npos.y, mode);
+	else if(action==GLFW_RELEASE)	trackball.end();
 
 }
 
 void motion( GLFWwindow* window, double x, double y )
 {
-	if(!tb.bTracking) return;
+	if(!trackball.bTracking) return;
 	vec2 npos = vec2( float(x)/float(window_size.x-1), float(y)/float(window_size.y-1) );
-	cam.view_matrix = tb.update( npos.x, npos.y );
+	cameraInfo.view_matrix = trackball.update( npos.x, npos.y );
 }
 
 void update_vertex_buffer()
