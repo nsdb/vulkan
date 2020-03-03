@@ -26,8 +26,7 @@
 #include "cgmath.h"
 #include "Planet.h"
 
-const int WIDTH = 800;
-const int HEIGHT = 600;
+ivec2 window_size = ivec2(1280, 720); // initial window size
 
 const int MAX_FRAMES_IN_FLIGHT = 2;
 
@@ -123,6 +122,21 @@ struct Vertex {
 		return attributeDescriptions;
 	}
 };
+
+struct CameraInfo {
+	glm::vec3 eye = { 0.0f, 100.0f, 20.0f };
+	glm::vec3 at = { 0.0f, 0.0f, 0.0f };
+	glm::vec3 up = { 0.0f, 0.0f, 1.0f };
+
+	float fovy = glm::radians(45.0f);
+	float aspect = (float)window_size.x / window_size.y;
+	float sightNear = 1.0f;
+	float sightFar = 1000.0f;
+};
+CameraInfo cameraInfo;
+
+
+
 
 
 // Uniform Buffer
@@ -389,16 +403,61 @@ private:
 
 		glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 
-		window = glfwCreateWindow(WIDTH, HEIGHT, "Vulkan", nullptr, nullptr);
+		window = glfwCreateWindow(window_size.x, window_size.y, "Vulkan", nullptr, nullptr);
 		glfwSetWindowUserPointer(window, this);
-		glfwSetFramebufferSizeCallback(window, framebufferResizeCallback);
+
+		glfwSetFramebufferSizeCallback(window, framebufferResizeCallback);      // callback for window resizing events
+		glfwSetKeyCallback(window, keyboardCallback);			                // callback for keyboard events
+
+		printHelp();
 	}
 
 	static void framebufferResizeCallback(GLFWwindow* window, int width, int height) {
 		auto app = reinterpret_cast<HelloTriangleApplication*>(glfwGetWindowUserPointer(window));
 		app->framebufferResized = true;
+		cameraInfo.aspect = (float)width / height;
 	}
 
+	static void keyboardCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
+
+		if (action == GLFW_PRESS)
+		{
+			if (key == GLFW_KEY_ESCAPE || key == GLFW_KEY_Q)	glfwSetWindowShouldClose(window, GL_TRUE);
+			else if (key == GLFW_KEY_H || key == GLFW_KEY_F1)	printHelp();
+			//else if (key == GLFW_KEY_HOME)					memcpy(&cam, &camera(), sizeof(camera));
+			//else if (key == GLFW_KEY_W)
+			//{
+			//	bWireframe = !bWireframe;
+			//	glPolygonMode(GL_FRONT_AND_BACK, bWireframe ? GL_LINE : GL_FILL);
+			//	printf("> using %s mode\n", bWireframe ? "wireframe" : "solid");
+			//}
+			//else if (key == GLFW_KEY_LEFT_SHIFT || key == GLFW_KEY_RIGHT_SHIFT) {
+			//	bShiftKeyPressed = true;
+			//}
+			//else if (key == GLFW_KEY_LEFT_CONTROL || key == GLFW_KEY_RIGHT_CONTROL) {
+			//	bCtrlKeyPressed = true;
+			//}
+		}
+		else if (action == GLFW_RELEASE) {
+			//if (key == GLFW_KEY_LEFT_SHIFT || key == GLFW_KEY_RIGHT_SHIFT) {
+			//	bShiftKeyPressed = false;
+			//}
+			//else if (key == GLFW_KEY_LEFT_CONTROL || key == GLFW_KEY_RIGHT_CONTROL) {
+			//	bCtrlKeyPressed = false;
+			//}
+		}
+	}
+
+
+
+	static void printHelp() {
+		printf("[help]\n");
+		printf("- press ESC or 'q' to terminate the program\n");
+		printf("- press F1 or 'h' to see help\n");
+		printf("- press 'w' to toggle wireframe\n");
+		printf("- press Home to reset camera\n");
+		printf("\n");
+	}
 
 
 	//// Base
@@ -921,14 +980,14 @@ private:
 	void recreateSwapChain() {
 
 		// Wait for minimize
-		int width = 0, height = 0;
-		glfwGetFramebufferSize(window, &width, &height);
-		while (width == 0 || height == 0) {
-			glfwGetFramebufferSize(window, &width, &height);
+		glfwGetFramebufferSize(window, &window_size.x, &window_size.y);
+		while (window_size.x == 0 || window_size.y == 0) {
+			glfwGetFramebufferSize(window, &window_size.x, &window_size.y);
 			glfwWaitEvents();
 		}
-
+		cameraInfo.aspect = (float)window_size.x / window_size.y;
 		vkDeviceWaitIdle(device);
+
 
 		cleanupSwapChain();
 
@@ -1779,10 +1838,9 @@ private:
 			}
 
 			// camera
-			ubo.view = glm::lookAt(glm::vec3(0.0f, 100.0f, 20.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-			ubo.proj = glm::perspective(glm::radians(45.0f), swapChainExtent.width / (float)swapChainExtent.height, 1.0f, 1000.0f); // 4번째 항이 최대 시야
+			ubo.view = glm::lookAt(cameraInfo.eye, cameraInfo.at, cameraInfo.up);
+			ubo.proj = glm::perspective(cameraInfo.fovy, cameraInfo.aspect, cameraInfo.sightNear, cameraInfo.sightFar);
 			ubo.proj[1][1] *= -1;
-
 
 			// light
 			ubo.light = { 0.0f, 0.0f, 0.0f, 1.0f };   // non-directional light
