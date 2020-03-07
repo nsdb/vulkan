@@ -150,6 +150,7 @@ struct CameraInfo {
 };
 CameraInfo cameraInfo;
 Trackball trackball;
+bool bWireframe = false;
 bool bShiftKeyPressed = false;
 bool bCtrlKeyPressed = false;
 
@@ -325,6 +326,7 @@ private:
 	// Window
 	GLFWwindow* window;
 	bool framebufferResized = false;
+	bool wireframeModeChanged = false;
 
 	// Instance
 	VkInstance instance;
@@ -444,12 +446,13 @@ private:
 			if (key == GLFW_KEY_ESCAPE || key == GLFW_KEY_Q)	glfwSetWindowShouldClose(window, GL_TRUE);
 			else if (key == GLFW_KEY_H || key == GLFW_KEY_F1)	printHelp();
 			else if (key == GLFW_KEY_HOME)					    cameraInfo = {};
-			//else if (key == GLFW_KEY_W)
-			//{
-			//	bWireframe = !bWireframe;
-			//	glPolygonMode(GL_FRONT_AND_BACK, bWireframe ? GL_LINE : GL_FILL);
-			//	printf("> using %s mode\n", bWireframe ? "wireframe" : "solid");
-			//}
+			else if (key == GLFW_KEY_W)
+			{
+				bWireframe = !bWireframe;
+				auto app = reinterpret_cast<HelloTriangleApplication*>(glfwGetWindowUserPointer(window));
+				app->wireframeModeChanged = true;
+				printf("> using %s mode\n", bWireframe ? "wireframe" : "solid");
+			}
 			else if (key == GLFW_KEY_LEFT_SHIFT || key == GLFW_KEY_RIGHT_SHIFT) {
 				bShiftKeyPressed = true;
 			}
@@ -904,6 +907,7 @@ private:
 
 		VkPhysicalDeviceFeatures deviceFeatures = {};
 		deviceFeatures.samplerAnisotropy = VK_TRUE;
+		deviceFeatures.fillModeNonSolid = VK_TRUE; // VK_POLYGON_MODE_LINE을 오류 없이 사용하기 위해 활성화
 
 		VkDeviceCreateInfo createInfo = {};
 		createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
@@ -1311,7 +1315,7 @@ private:
 		rasterizer.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
 		rasterizer.depthClampEnable = VK_FALSE;
 		rasterizer.rasterizerDiscardEnable = VK_FALSE;
-		rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
+		rasterizer.polygonMode = (bWireframe) ? VK_POLYGON_MODE_LINE : VK_POLYGON_MODE_FILL;
 		rasterizer.lineWidth = 1.0f;
 		rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
 		rasterizer.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
@@ -2176,8 +2180,9 @@ private:
 		// Present
 		result = vkQueuePresentKHR(presentQueue, &presentInfo);
 
-		if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || framebufferResized) {
+		if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || framebufferResized || wireframeModeChanged) {
 			framebufferResized = false;
+			wireframeModeChanged = false;
 			recreateSwapChain();
 		}
 		else if (result != VK_SUCCESS) {
