@@ -41,13 +41,13 @@ const std::vector<const char*> deviceExtensions = {
 	VK_KHR_SWAPCHAIN_EXTENSION_NAME
 };
 
+#define NDEBUG
 
 #ifdef NDEBUG
 const bool enableValidationLayers = false;
 #else
 const bool enableValidationLayers = true;
 #endif
-
 
 //// 동적 로드하여 사용해야 하는 Vulkan 함수
 VkResult CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger) {
@@ -2211,6 +2211,8 @@ int main() {
 	}
 	catch (const std::exception& e) {
 		std::cerr << e.what() << std::endl;
+		std::cerr << "에러 발생 : 종료하려면 아무 키나 누르세요." << std::endl;
+		getchar();
 		return EXIT_FAILURE;
 	}
 
