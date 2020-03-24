@@ -8,7 +8,7 @@
 static const char*	window_name = "cgbase - trackball";
 static const char*	vert_shader_path = "./shaders/trackball.vert";
 static const char*	frag_shader_path = "./shaders/trackball.frag";
-static const uint	NUM_TESS = 72;		// initial tessellation factor of the "sphere" as a "polyhedron"
+static const uint	NUM_TESS = 72 * 8;		// initial tessellation factor of the "sphere" as a "polyhedron"
 static const uint   NUM_TEXTURE = 12;  // number of texture
 
 //*******************************************************************

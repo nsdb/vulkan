@@ -183,13 +183,13 @@ struct UniformBufferObject {
 
 // Vertices, Indices
 
-static const uint NUM_TESS = 72; // initial tessellation factor of the "sphere" as a "polyhedron"
+static const uint NUM_TESS = 72 * 8; // initial tessellation factor of the "sphere" as a "polyhedron"
 static const float RADIUS = 1.0f;
 
 std::vector<Vertex> planet_vertex_list;
-std::vector<ushort> planet_index_list;
+std::vector<uint> planet_index_list;
 std::vector<Vertex>	ring_vertex_list;
-std::vector<ushort>	ring_index_list;
+std::vector<uint> ring_index_list;
 
 void createVerticesAndIndices()
 {
@@ -218,8 +218,8 @@ void createVerticesAndIndices()
 
 	// Planet Index
 	planet_index_list.clear();
-	for (ushort i = 0; i <= NUM_TESS + 1; i++) {
-		for (ushort k = 0; k < NUM_TESS / 2; k++) {
+	for (uint i = 0; i <= NUM_TESS + 1; i++) {
+		for (uint k = 0; k < NUM_TESS / 2; k++) {
 			planet_index_list.push_back(i * (NUM_TESS / 2) + k);
 			planet_index_list.push_back(i * (NUM_TESS / 2) + k + 1);
 			planet_index_list.push_back((i + 1) * (NUM_TESS / 2) + k + 1);
@@ -1747,7 +1747,7 @@ private:
 		vkFreeMemory(device, stagingBufferMemory, nullptr);
 	}
 
-	void createIndexBuffer(std::vector<ushort>& indexList, VkBuffer& indexBuffer, VkDeviceMemory& indexBufferMemory) {
+	void createIndexBuffer(std::vector<uint>& indexList, VkBuffer& indexBuffer, VkDeviceMemory& indexBufferMemory) {
 		VkDeviceSize bufferSize = sizeof(indexList[0]) * indexList.size();
 
 		VkBuffer stagingBuffer;
@@ -2066,13 +2066,13 @@ private:
 				switch (planet_list[n].vertex_index) {
 				case 0:
 					vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, planetVertexBuffers, offsets); 
-					vkCmdBindIndexBuffer(commandBuffers[i], planetIndexBuffer, 0, VK_INDEX_TYPE_UINT16);
+					vkCmdBindIndexBuffer(commandBuffers[i], planetIndexBuffer, 0, VK_INDEX_TYPE_UINT32);
 					vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSets[n][i], 0, nullptr);
 					vkCmdDrawIndexed(commandBuffers[i], static_cast<uint32_t>(planet_index_list.size()), 1, 0, 0, 0);
 					break;
 				case 1:
 					vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, ringVertexBuffers, offsets); 
-					vkCmdBindIndexBuffer(commandBuffers[i], ringIndexBuffer, 0, VK_INDEX_TYPE_UINT16);
+					vkCmdBindIndexBuffer(commandBuffers[i], ringIndexBuffer, 0, VK_INDEX_TYPE_UINT32);
 					vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSets[n][i], 0, nullptr);
 					vkCmdDrawIndexed(commandBuffers[i], static_cast<uint32_t>(ring_index_list.size()), 1, 0, 0, 0);
 					break;
