@@ -83,6 +83,10 @@ uint saturn_ring_parent_index = -1;// parent index of saturn ring (saturn index)
 float saturn_ring_radius = 0.0f;    // radius of saturn ring
 
 
+int frameCheckCount = 0;
+float frameCheckTime = 0;
+
+
 //*******************************************************************
 void update()
 {
@@ -208,6 +212,17 @@ void render()
 
 	// swap front and back buffers, and display to screen
 	glfwSwapBuffers( window );
+
+
+	// Frame display
+	frameCheckCount += 1;
+	float checkTime = (float)glfwGetTime();
+	float elapsedTime = checkTime - frameCheckTime;
+	if (elapsedTime > 1) {
+		printf("Frame rate : %.2f/s\n", frameCheckCount / elapsedTime);
+		frameCheckTime = checkTime;
+		frameCheckCount = 0;
+	}
 }
 
 void reshape( GLFWwindow* window, int width, int height )

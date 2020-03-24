@@ -414,6 +414,10 @@ private:
 	size_t currentFrame = 0;
 	std::chrono::time_point<std::chrono::steady_clock> currentTime = std::chrono::high_resolution_clock::now();
 
+	// Frame update count
+	size_t frameCheckCount = 0;
+	std::chrono::time_point<std::chrono::steady_clock> frameCheckTime = std::chrono::high_resolution_clock::now();
+
 
 	//// Window
 
@@ -2191,6 +2195,17 @@ private:
 
 		// Frame Update
 		currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
+
+		// Frame display
+		frameCheckCount += 1;
+		auto checkTime = std::chrono::high_resolution_clock::now();
+		float elapsedTime = std::chrono::duration<float, std::chrono::seconds::period>(checkTime - frameCheckTime).count();
+		if (elapsedTime > 1) {
+			printf("Frame rate : %.2f/s\n", frameCheckCount / elapsedTime);
+			frameCheckTime = checkTime;
+			frameCheckCount = 0;
+		}
+
 	}
 };
 
