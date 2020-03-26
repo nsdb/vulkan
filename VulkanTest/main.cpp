@@ -143,7 +143,7 @@ struct CameraInfo {
 	}
 
 	void updateProjectionMatrix(int width, int height) {
-		aspect = (float)width / height;
+		aspect = (height == 0) ? 1 : (float)width / height;
 		projMatrix = glm::perspective(fovy, aspect, sightNear, sightFar);
 		projMatrix[1][1] *= -1;
 	}
@@ -183,7 +183,7 @@ struct UniformBufferObject {
 
 // Vertices, Indices
 
-static const uint NUM_TESS = 72 * 8; // initial tessellation factor of the "sphere" as a "polyhedron"
+static const uint NUM_TESS = 72; // initial tessellation factor of the "sphere" as a "polyhedron"
 static const float RADIUS = 1.0f;
 
 std::vector<Vertex> planet_vertex_list;
@@ -193,7 +193,7 @@ std::vector<uint> ring_index_list;
 
 void createVerticesAndIndices()
 {
-
+	/// 2(n-1)(n-1)
 	// Planet Vertex
 	// i : longitude, k : latitude
 	planet_vertex_list.clear();
