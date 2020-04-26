@@ -502,6 +502,13 @@ void update_circle_vertices()
 	saturn_ring_parent_index = 6;
 	saturn_ring_radius = planet_list.at(6).radius * 2.0f;
 
+	// other tiny planets
+	srand((int)time(NULL));
+	for (int i = 0; i < 1000; i++) {
+		int parent = rand() % 9;
+		planet_list.push_back(Planet(parent, 9, planet_list.at(parent).radius + 1 + rand() % 500 / 100.0f, 0.01f + rand() % 10 / 100.0f, 1.0f + rand() % 1000 / 100.0f, 1.0f + rand() % 1000 / 100.0f));
+	}
+
 }
 
 
