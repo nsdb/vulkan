@@ -2,14 +2,17 @@
 #include "cgut.h"			// slee's OpenGL utility
 #include "trackball.h"		// virtual trackball
 #include "Planet.h"         // Planet info
+#include <iostream>
 
 //*******************************************************************
 // global constants
 static const char*	window_name = "cgbase - trackball";
-static const char*	vert_shader_path = "./shaders/trackball.vert";
-static const char*	frag_shader_path = "./shaders/trackball.frag";
+static const char*	vert_shader_planet_path = "./shaders/trackball.vert";
+static const char*	frag_shader_planet_path = "./shaders/trackball.frag";
+static const char*	vert_shader_skybox_path = "./shaders/skybox.vert";
+static const char*	frag_shader_skybox_path = "./shaders/skybox.frag";
 static const uint	NUM_TESS = 72 * 8;		// initial tessellation factor of the "sphere" as a "polyhedron"
-static const uint   NUM_TEXTURE = 12;  // number of texture
+static const uint   NUM_TEXTURE = 13;  // number of texture
 
 //*******************************************************************
 // include stb_image with the implementation preprocessor definition
@@ -48,9 +51,12 @@ ivec2		window_size = ivec2( 1280, 720 );	// initial window size
 
 //*******************************************************************
 // OpenGL objects
-GLuint	program	= 0;	// ID holder for GPU program
+GLuint	program_planet	= 0;	// ID holder for GPU program
+GLuint	program_skybox = 0;	    // ID holder for GPU program
 GLuint	planet_vertex_buffer = 0;	// ID holder for vertex buffer (Planet)
 GLuint	planet_index_buffer = 0;	// ID holder for index buffer (Planet)
+GLuint	skybox_vertex_buffer = 0;	// ID holder for vertex buffer (Skybox)
+GLuint	skybox_index_buffer = 0;	// ID holder for index buffer (Skybox)
 GLuint	ring_vertex_buffer = 0;	// ID holder for vertex buffer (Ring)
 GLuint	ring_index_buffer = 0;	// ID holder for index buffer (Ring)
 
@@ -69,6 +75,8 @@ GLuint  textures[NUM_TEXTURE]; // texture array
 // holder of vertices and indices
 std::vector<vertex>	planet_vertex_list;	    // host-side vertices (Planet)
 std::vector<uint>	planet_index_list;		// host-side indices (Planet)
+std::vector<vertex>	skybox_vertex_list;	    // host-side vertices (Skybox)
+std::vector<uint>	skybox_index_list;		// host-side indices (Skybox)
 std::vector<vertex>	ring_vertex_list;	    // host-side vertices (Ring)
 std::vector<uint>	ring_index_list;		// host-side indices (Ring)
 
@@ -103,35 +111,70 @@ void update()
 
 	// update uniform variables in vertex/fragment shaders
 	GLint uloc;
-	uloc = glGetUniformLocation( program, "view_matrix" );			if(uloc>-1) glUniformMatrix4fv( uloc, 1, GL_TRUE, cameraInfo.view_matrix );
-	uloc = glGetUniformLocation( program, "projection_matrix" );	if(uloc>-1) glUniformMatrix4fv( uloc, 1, GL_TRUE, cameraInfo.projection_matrix );
+	uloc = glGetUniformLocation( program_planet, "view_matrix" );			if(uloc>-1) glUniformMatrix4fv( uloc, 1, GL_TRUE, cameraInfo.view_matrix );
+	uloc = glGetUniformLocation( program_planet, "projection_matrix" );	    if(uloc>-1) glUniformMatrix4fv( uloc, 1, GL_TRUE, cameraInfo.projection_matrix );
 
 	// setup light properties
-	uloc = glGetUniformLocation(program, "light_position");			if (uloc>-1) glUniform4fv(uloc, 1, lightInfo.position);
-	uloc = glGetUniformLocation(program, "Ia");						if (uloc>-1) glUniform4fv(uloc, 1, lightInfo.ambient);
-	uloc = glGetUniformLocation(program, "Id");						if (uloc>-1) glUniform4fv(uloc, 1, lightInfo.diffuse);
-	uloc = glGetUniformLocation(program, "Is");						if (uloc>-1) glUniform4fv(uloc, 1, lightInfo.specular);
+	uloc = glGetUniformLocation(program_planet, "light_position");			if (uloc>-1) glUniform4fv(uloc, 1, lightInfo.position);
+	uloc = glGetUniformLocation(program_planet, "Ia");						if (uloc>-1) glUniform4fv(uloc, 1, lightInfo.ambient);
+	uloc = glGetUniformLocation(program_planet, "Id");						if (uloc>-1) glUniform4fv(uloc, 1, lightInfo.diffuse);
+	uloc = glGetUniformLocation(program_planet, "Is");						if (uloc>-1) glUniform4fv(uloc, 1, lightInfo.specular);
 
 	// setup material properties
-	uloc = glGetUniformLocation(program, "shininess");				if (uloc>-1) glUniform1f(uloc, planet_shininess);
+	uloc = glGetUniformLocation(program_planet, "shininess");				if (uloc>-1) glUniform1f(uloc, planet_shininess);
 
 
 }
 
 void render()
 {
+	GLint uloc;
+
 	// clear screen (with background color) and clear depth buffer
 	glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
+
+
+
+	// skybox
+	glUseProgram(program_skybox);
+
+	mat4 model_matrix = mat4::translate(0, 0, 0) * mat4::scale(cameraInfo.dFar / 2, cameraInfo.dFar / 2, cameraInfo.dFar / 2);
+
+	vec3 view_eye = vec3(0.0f, 0.0f, 0.0f);
+	vec3 view_at = vec3(cameraInfo.view_matrix[2], cameraInfo.view_matrix[6], cameraInfo.view_matrix[10]);
+	vec3 view_up = vec3(cameraInfo.view_matrix[1], cameraInfo.view_matrix[5], cameraInfo.view_matrix[9]);
+	mat4 view_matrix = mat4::lookAt(view_eye, view_at, view_up);
+
+	uloc = glGetUniformLocation(program_skybox, "model_matrix");            if (uloc>-1) glUniformMatrix4fv(uloc, 1, GL_TRUE, model_matrix);
+	uloc = glGetUniformLocation(program_skybox, "view_matrix");             if (uloc>-1) glUniformMatrix4fv(uloc, 1, GL_TRUE, view_matrix);
+	uloc = glGetUniformLocation(program_skybox, "projection_matrix");	    if (uloc>-1) glUniformMatrix4fv(uloc, 1, GL_TRUE, cameraInfo.projection_matrix);
+	uloc = glGetUniformLocation(program_skybox, "skybox");                  if (uloc>-1) glUniform1i(uloc, textures[12]);
+
+	const char*	vertex_attrib_skybox[] = { "position" };
+	size_t		attrib_size_skybox[] = { sizeof(vertex().pos), sizeof(vertex().norm) };
+	for (size_t k = 0, kn = std::extent<decltype(vertex_attrib_skybox)>::value, byte_offset = 0; k<kn; k++, byte_offset += attrib_size_skybox[k - 1])
+	{
+		GLuint loc = glGetAttribLocation(program_planet, vertex_attrib_skybox[k]); if (loc >= kn) continue;
+		glEnableVertexAttribArray(loc);
+		glBindBuffer(GL_ARRAY_BUFFER, skybox_vertex_buffer);
+		glVertexAttribPointer(loc, attrib_size_skybox[k] / sizeof(GLfloat), GL_FLOAT, GL_FALSE, sizeof(vertex), (GLvoid*)byte_offset);
+	}
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, skybox_index_buffer);
+	glDrawElements(GL_TRIANGLES, skybox_index_list.size(), GL_UNSIGNED_INT, nullptr);
+
+
+
+
 	
 	// notify GL that we use our own program
-	glUseProgram( program );
+	glUseProgram( program_planet );
 
 	// bind "planet" vertex attributes to your shader program
 	const char*	vertex_attrib[]	= { "position", "normal", "texcoord" };
 	size_t		attrib_size[]	= { sizeof(vertex().pos), sizeof(vertex().norm), sizeof(vertex().tex) };
 	for( size_t k=0, kn=std::extent<decltype(vertex_attrib)>::value, byte_offset=0; k<kn; k++, byte_offset+=attrib_size[k-1] )
 	{
-		GLuint loc = glGetAttribLocation( program, vertex_attrib[k] ); if(loc>=kn) continue;
+		GLuint loc = glGetAttribLocation( program_planet, vertex_attrib[k] ); if(loc>=kn) continue;
 		glEnableVertexAttribArray( loc );
 		glBindBuffer( GL_ARRAY_BUFFER, planet_vertex_buffer );
 		glVertexAttribPointer( loc, attrib_size[k]/sizeof(GLfloat), GL_FLOAT, GL_FALSE, sizeof(vertex), (GLvoid*) byte_offset );
@@ -141,7 +184,6 @@ void render()
 	if (planet_index_buffer) glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, planet_index_buffer);
 
 	// render each "planet"(sphere)
-	GLint uloc;
 	for (int i = 0; i < (int)planet_list.size(); i++) {
 
 		// radius, model matrix for planet
@@ -169,11 +211,13 @@ void render()
 			model_matrix = model_matrix * mat4::rotate(vec3(0, 0, 1), planet_list.at(i).rotation_theta);
 		}
 
-		uloc = glGetUniformLocation(program, "use_alpha_tex");				if (uloc > -1) glUniform1i(uloc, false); // do not use alpha tex
-		uloc = glGetUniformLocation(program, "use_shader");					if (uloc > -1) glUniform1i(uloc, i != 0); // do not apply shader to the Sun
-		uloc = glGetUniformLocation(program, "planet_radius");				if (uloc > -1) glUniform1f(uloc, planet_list.at(i).radius);
-		uloc = glGetUniformLocation(program, "model_matrix");				if (uloc > -1) glUniformMatrix4fv(uloc, 1, GL_TRUE, model_matrix);
-		uloc = glGetUniformLocation(program, "TEX");						if (uloc > -1) glUniform1i(uloc, planet_list.at(i).planet_texture_index);
+		model_matrix = model_matrix * mat4::scale(planet_list.at(i).radius, planet_list.at(i).radius, planet_list.at(i).radius);
+
+		uloc = glGetUniformLocation(program_planet, "use_alpha_tex");				if (uloc > -1) glUniform1i(uloc, false); // do not use alpha tex
+		uloc = glGetUniformLocation(program_planet, "use_shader");					if (uloc > -1) glUniform1i(uloc, i != 0); // do not apply shader to the Sun
+		uloc = glGetUniformLocation(program_planet, "planet_radius");				if (uloc > -1) glUniform1f(uloc, planet_list.at(i).radius);
+		uloc = glGetUniformLocation(program_planet, "model_matrix");				if (uloc > -1) glUniformMatrix4fv(uloc, 1, GL_TRUE, model_matrix);
+		uloc = glGetUniformLocation(program_planet, "TEX");						if (uloc > -1) glUniform1i(uloc, planet_list.at(i).planet_texture_index);
 
 		// render vertices: trigger shader programs to process vertex data
 		glDrawElements(GL_TRIANGLES, planet_index_list.size(), GL_UNSIGNED_INT, nullptr);
@@ -183,7 +227,7 @@ void render()
 	// bind "ring" vertex attributes to your shader program
 	for (size_t k = 0, kn = std::extent<decltype(vertex_attrib)>::value, byte_offset = 0; k<kn; k++, byte_offset += attrib_size[k - 1])
 	{
-		GLuint loc = glGetAttribLocation(program, vertex_attrib[k]); if (loc >= kn) continue;
+		GLuint loc = glGetAttribLocation(program_planet, vertex_attrib[k]); if (loc >= kn) continue;
 		glEnableVertexAttribArray(loc);
 		glBindBuffer(GL_ARRAY_BUFFER, ring_vertex_buffer);
 		glVertexAttribPointer(loc, attrib_size[k] / sizeof(GLfloat), GL_FLOAT, GL_FALSE, sizeof(vertex), (GLvoid*)byte_offset);
@@ -193,18 +237,18 @@ void render()
 	if (ring_index_buffer) glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ring_index_buffer);
 
 	// render "ring"
-	mat4 model_matrix = mat4::translate(0, 0, 0);
+	model_matrix = mat4::translate(0, 0, 0);
 	// position, revolution process
 	model_matrix = model_matrix * mat4::rotate(vec3(0, 0, 1), planet_list.at(saturn_ring_parent_index).revolution_theta) * mat4::translate(planet_list.at(saturn_ring_parent_index).distance, 0, 0);
 	// rotation process
 	model_matrix = model_matrix * mat4::rotate(vec3(0, 0, 1), planet_list.at(saturn_ring_parent_index).rotation_theta);
 
-	uloc = glGetUniformLocation(program, "use_alpha_tex");				if (uloc > -1) glUniform1i(uloc, true); // use alpha tex
-	uloc = glGetUniformLocation(program, "use_shader");					if (uloc > -1) glUniform1i(uloc, true); // use shader
-	uloc = glGetUniformLocation(program, "planet_radius");				if (uloc > -1) glUniform1f(uloc, saturn_ring_radius);
-	uloc = glGetUniformLocation(program, "model_matrix");				if (uloc > -1) glUniformMatrix4fv(uloc, 1, GL_TRUE, model_matrix);
-	uloc = glGetUniformLocation(program, "TEX");						if (uloc > -1) glUniform1i(uloc, 10); // index of the saturn ring
-	uloc = glGetUniformLocation(program, "TEX_ALPHA");					if (uloc > -1) glUniform1i(uloc, 11); // index of the saturn ring alpha
+	uloc = glGetUniformLocation(program_planet, "use_alpha_tex");				if (uloc > -1) glUniform1i(uloc, true); // use alpha tex
+	uloc = glGetUniformLocation(program_planet, "use_shader");					if (uloc > -1) glUniform1i(uloc, true); // use shader
+	uloc = glGetUniformLocation(program_planet, "planet_radius");				if (uloc > -1) glUniform1f(uloc, saturn_ring_radius);
+	uloc = glGetUniformLocation(program_planet, "model_matrix");				if (uloc > -1) glUniformMatrix4fv(uloc, 1, GL_TRUE, model_matrix);
+	uloc = glGetUniformLocation(program_planet, "TEX");						if (uloc > -1) glUniform1i(uloc, 10); // index of the saturn ring
+	uloc = glGetUniformLocation(program_planet, "TEX_ALPHA");					if (uloc > -1) glUniform1i(uloc, 11); // index of the saturn ring alpha
 
 	// render vertices: trigger shader programs to process vertex data
 	glDrawElements(GL_TRIANGLES, ring_index_list.size(), GL_UNSIGNED_INT, nullptr);
@@ -322,6 +366,8 @@ void update_vertex_buffer()
 	// clear and create new buffers
 	if (planet_vertex_buffer)	glDeleteBuffers(1, &planet_vertex_buffer);	planet_vertex_buffer = 0;
 	if (planet_index_buffer)	glDeleteBuffers(1, &planet_index_buffer);	planet_index_buffer = 0;
+	if (skybox_vertex_buffer)	glDeleteBuffers(1, &skybox_vertex_buffer);	skybox_vertex_buffer = 0;
+	if (skybox_index_buffer)	glDeleteBuffers(1, &skybox_index_buffer);	skybox_index_buffer = 0;
 	if (ring_vertex_buffer)	glDeleteBuffers(1, &ring_vertex_buffer);	ring_vertex_buffer = 0;
 	if (ring_index_buffer)	glDeleteBuffers(1, &ring_index_buffer);	ring_index_buffer = 0;
 
@@ -342,6 +388,14 @@ void update_vertex_buffer()
 			planet_index_list.push_back(i * (NUM_TESS / 2) + k);
 		}
 	}
+	skybox_index_list = {
+		0, 1, 3, 3, 1, 2,
+		1, 5, 2, 2, 5, 6,
+		5, 4, 6, 6, 4, 7,
+		4, 0, 7, 7, 0, 3,
+		3, 2, 7, 7, 2, 6,
+		4, 5, 0, 0, 5, 1
+	};
 	ring_index_list.clear();
 	for (uint i = 0; i <= NUM_TESS; i++) {
 
@@ -369,6 +423,9 @@ void update_vertex_buffer()
 	glGenBuffers(1, &planet_vertex_buffer);
 	glBindBuffer(GL_ARRAY_BUFFER, planet_vertex_buffer);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertex)*planet_vertex_list.size(), &planet_vertex_list[0], GL_STATIC_DRAW);
+	glGenBuffers(1, &skybox_vertex_buffer);
+	glBindBuffer(GL_ARRAY_BUFFER, skybox_vertex_buffer);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(vertex)*skybox_vertex_list.size(), &skybox_vertex_list[0], GL_STATIC_DRAW);
 	glGenBuffers(1, &ring_vertex_buffer);
 	glBindBuffer(GL_ARRAY_BUFFER, ring_vertex_buffer);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertex)*ring_vertex_list.size(), &ring_vertex_list[0], GL_STATIC_DRAW);
@@ -377,6 +434,9 @@ void update_vertex_buffer()
 	glGenBuffers(1, &planet_index_buffer);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, planet_index_buffer);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(uint)*planet_index_list.size(), &planet_index_list[0], GL_STATIC_DRAW);
+	glGenBuffers(1, &skybox_index_buffer);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, skybox_index_buffer);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(uint)*skybox_index_list.size(), &skybox_index_list[0], GL_STATIC_DRAW);
 	glGenBuffers(1, &ring_index_buffer);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ring_index_buffer);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(uint)*ring_index_list.size(), &ring_index_list[0], GL_STATIC_DRAW);
@@ -401,12 +461,71 @@ void mapping_texture(GLuint* target, const char* filePath) {
 	glBindTexture(GL_TEXTURE_2D, *target);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
 
+	GLenum error = glGetError();
+	if (error) std::cout << "TexImage 2D Error : " << error << "(file : " << filePath << ")" << std::endl;
+
 	for (int k = 1, w = width >> 1, h = height >> 1; k<mip_levels; k++, w = max(1, w >> 1), h = max(1, h >> 1))
 		glTexImage2D(GL_TEXTURE_2D, k, GL_RGB8 /* GL_RGB for legacy GL */, w, h, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
 	glGenerateMipmap(GL_TEXTURE_2D);
 
 	free(image0);
 	free(image);
+
+
+}
+
+void mapping_cube_map_texture(GLuint* target, std::vector<std::string> files) {
+
+	// Texture
+	int mip_levels = get_mip_levels(window_size.x, window_size.y);
+
+	// load image
+	int width, height, comp = 3;
+	glGenTextures(1, target);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, *target);
+	for (uint i = 0; i < files.size(); i++) {
+
+		unsigned char* image = stbi_load(files[i].c_str(), &width, &height, &comp, 3);
+		if (comp == 1) comp = 3;
+
+		std::cout << "Cube image loaded : " << i + 1 << "/" << files.size() << std::endl;
+
+		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB8, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
+		for (int k = 1, w = width >> 1, h = height >> 1; k<mip_levels; k++, w = max(1, w >> 1), h = max(1, h >> 1))
+			glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, k, GL_RGB8 /* GL_RGB for legacy GL */, w, h, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
+
+		GLenum error = glGetError();
+		if(error) std::cout << "TexImage cubemap Error : " << error << "(file : " << files[i] << ")" << std::endl;
+
+		free(image);
+	}
+	glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
+
+	GLenum error = glGetError();
+	if (error) std::cout << "TexImage generateMipMap Error : " << error << std::endl;
+}
+
+
+void update_cude_map() {
+
+	// texture initialize
+	// 주의 : 가로 세로 길이가 같아야 한다.
+	mapping_cube_map_texture(&textures[12], {
+		//"./textures/space_right.jpg",
+		//"./textures/space_left.jpg",
+		//"./textures/space_up.jpg",
+		//"./textures/space_down.jpg",
+		//"./textures/space_front.jpg",
+		//"./textures/space_back.jpg" 
+		"./textures/white.jpg",
+		"./textures/white.jpg",
+		"./textures/white.jpg",
+		"./textures/white.jpg",
+		"./textures/white.jpg",
+		"./textures/white.jpg"
+	});
+	glActiveTexture(GL_TEXTURE0 + 12);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, textures[12]);
 
 }
 
@@ -437,6 +556,22 @@ void update_circle_vertices()
 		}
 	}
 
+	// Skybox
+	skybox_vertex_list = {
+		// positions
+		{ vec3(-1.0f,  -1.0f, -1.0f), vec3(-1.0f,  -1.0f, -1.0f), vec2(0.0f, 0.0f) },
+		{ vec3(1.0f,  -1.0f, -1.0f), vec3(1.0f,  -1.0f, -1.0f), vec2(0.0f, 0.0f) },
+		{ vec3(1.0f,  1.0f, -1.0f), vec3(1.0f,  1.0f, -1.0f), vec2(0.0f, 0.0f) },
+		{ vec3(-1.0f,  1.0f, -1.0f), vec3(-1.0f,  1.0f, -1.0f), vec2(0.0f, 0.0f) },
+		{ vec3(-1.0f,  -1.0f, 1.0f), vec3(-1.0f,  -1.0f, 1.0f), vec2(0.0f, 0.0f) },
+		{ vec3(1.0f,  -1.0f, 1.0f), vec3(1.0f,  -1.0f, 1.0f), vec2(0.0f, 0.0f) },
+		{ vec3(1.0f,  1.0f, 1.0f), vec3(1.0f,  1.0f, 1.0f), vec2(0.0f, 0.0f) },
+		{ vec3(-1.0f,  1.0f, 1.0f), vec3(-1.0f,  1.0f, 1.0f), vec2(0.0f, 0.0f) }
+	};
+
+
+
+
 	// Ring Init
 	// i : longitude
 	for (uint i = 0; i <= NUM_TESS; i++) {
@@ -465,7 +600,7 @@ void update_circle_vertices()
 	mapping_texture(&textures[11], "./textures/saturn-ring-alpha.jpg");
 
 	// texture bind
-	for (int i = 0; i < NUM_TEXTURE; i++) {
+	for (int i = 0; i < NUM_TEXTURE - 1; i++) {
 		glActiveTexture(GL_TEXTURE0 + i);
 		glBindTexture(GL_TEXTURE_2D, textures[i]);
 	}
@@ -516,6 +651,7 @@ bool user_init()
 	glEnable( GL_CULL_FACE );								// turn on backface culling
 	glEnable( GL_DEPTH_TEST );								// turn on depth tests
 	glEnable(GL_TEXTURE_2D);                                // enable texturing for 2D
+	glEnable(GL_TEXTURE_CUBE_MAP);                          // enable texturing for Cube Map
 	glEnable(GL_BLEND);										// enable alpha
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
@@ -527,11 +663,27 @@ bool user_init()
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 
+	// cube map
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+
+
+
 	// define the position of four corner vertices
 	update_circle_vertices();
 
+	// cube map
+	update_cude_map();
+
 	// create vertex buffer
 	update_vertex_buffer();
+
+	// error check
+	GLenum error = glGetError();
+	if (error) std::cout << "Init Error : " << error << std::endl;
 
 	return true;
 }
@@ -550,7 +702,9 @@ void main( int argc, char* argv[] )
 	if(!cg_init_extensions( window )){ glfwTerminate(); return; }	// version and extensions
 
 	// initializations and validations
-	if(!(program=cg_create_program( vert_shader_path, frag_shader_path ))){ glfwTerminate(); return; }	// create and compile shaders/program
+	if (!(program_planet = cg_create_program(vert_shader_planet_path, frag_shader_planet_path))) { glfwTerminate(); return; }	// create and compile shaders/program
+	if (!(program_skybox = cg_create_program(vert_shader_skybox_path, frag_shader_skybox_path))) { glfwTerminate(); return; }	// create and compile shaders/program
+
 	if(!user_init()){ printf( "Failed to user_init()\n" ); glfwTerminate(); return; }					// user initialization
 
 	// register event callbacks

@@ -1,4 +1,4 @@
-#version 130
+#version 450
 
 // vertex attributes
 in vec3 position;
@@ -21,7 +21,7 @@ uniform float planet_radius;
 void main()
 {
 	// apply radius
-	vec3 regulated = position * planet_radius;
+	vec3 regulated = position; // * planet_radius;
 
 	// projection
 	vec4 wpos = model_matrix * vec4(regulated, 1);

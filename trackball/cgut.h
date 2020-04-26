@@ -310,7 +310,7 @@ inline GLuint cg_create_program_from_string( const char* vertex_shader_source, c
 {
 	// try to create a program
 	GLuint program = glCreateProgram();
-	glUseProgram( program );
+	//glUseProgram( program ); // 오류 발생 코드
 
 	// create shaders
 	std::string log;
