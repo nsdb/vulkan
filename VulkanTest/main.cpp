@@ -41,7 +41,7 @@ const std::vector<const char*> deviceExtensions = {
 	VK_KHR_SWAPCHAIN_EXTENSION_NAME
 };
 
-#define NDEBUG
+//#define NDEBUG
 
 #ifdef NDEBUG
 const bool enableValidationLayers = false;
@@ -425,6 +425,12 @@ private:
 	size_t frameCheckCount = 0;
 	std::chrono::time_point<std::chrono::steady_clock> frameCheckTime = std::chrono::high_resolution_clock::now();
 
+	// indirect draw
+	std::vector<VkDrawIndexedIndirectCommand> indirectCommands;
+	VkBuffer indirectCommandsBuffer;
+	VkDeviceMemory indirectCommandsBufferMemory;
+
+
 
 	//// Window
 
@@ -572,14 +578,15 @@ private:
 		createWhiteDotImage(textureImage[12], textureImageMemory[12]);
 
 		createTextureImageView();
-
 		createTextureSampler();
-		createVerticesAndIndices(); // 시점 상관 없음
+
+		createVerticesAndIndices();
 		createVertexBuffer(planet_vertex_list, planetVertexBuffer, planetVertexBufferMemory);
 		createIndexBuffer(planet_index_list, planetIndexBuffer, planetIndexBufferMemory);
 		createVertexBuffer(ring_vertex_list, ringVertexBuffer, ringVertexBufferMemory);
 		createIndexBuffer(ring_index_list, ringIndexBuffer, ringIndexBufferMemory);
 		createPlanets();
+		prepareIndirectData();
 
 		uniformBuffers.resize(planet_list.size());
 		uniformBuffersMemory.resize(planet_list.size());
@@ -622,6 +629,10 @@ private:
 
 		// Descriptor Layout
 		vkDestroyDescriptorSetLayout(device, descriptorSetLayout, nullptr);
+
+		// Indirect draw
+		vkDestroyBuffer(device, indirectCommandsBuffer, nullptr);
+		vkFreeMemory(device, indirectCommandsBufferMemory, nullptr);
 
 		// Vertex Buffer, Index Buffer
 		vkDestroyBuffer(device, planetIndexBuffer, nullptr);
@@ -2075,13 +2086,15 @@ private:
 					vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, planetVertexBuffers, offsets); 
 					vkCmdBindIndexBuffer(commandBuffers[i], planetIndexBuffer, 0, VK_INDEX_TYPE_UINT32);
 					vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSets[n][i], 0, nullptr);
-					vkCmdDrawIndexed(commandBuffers[i], static_cast<uint32_t>(planet_index_list.size()), 1, 0, 0, 0);
+					vkCmdDrawIndexedIndirect(commandBuffers[i], indirectCommandsBuffer, n * sizeof(VkDrawIndexedIndirectCommand), 1, sizeof(VkDrawIndexedIndirectCommand));
+					//vkCmdDrawIndexed(commandBuffers[i], static_cast<uint32_t>(planet_index_list.size()), 1, 0, 0, 0);
 					break;
 				case 1:
 					vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, ringVertexBuffers, offsets); 
 					vkCmdBindIndexBuffer(commandBuffers[i], ringIndexBuffer, 0, VK_INDEX_TYPE_UINT32);
 					vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSets[n][i], 0, nullptr);
-					vkCmdDrawIndexed(commandBuffers[i], static_cast<uint32_t>(ring_index_list.size()), 1, 0, 0, 0);
+					vkCmdDrawIndexedIndirect(commandBuffers[i], indirectCommandsBuffer, n * sizeof(VkDrawIndexedIndirectCommand), 1, sizeof(VkDrawIndexedIndirectCommand));
+					//vkCmdDrawIndexed(commandBuffers[i], static_cast<uint32_t>(ring_index_list.size()), 1, 0, 0, 0);
 					break;
 				}
 
@@ -2123,6 +2136,60 @@ private:
 				throw std::runtime_error("failed to create synchronization objects for a frame!");
 			}
 		}
+	}
+
+
+	//// Indirect draw
+
+	void prepareIndirectData() {
+
+		indirectCommands.clear();
+
+		// Create on indirect command for each mesh in the scene
+		for (int n = 0; n < (int)planet_list.size(); n++) {
+
+			VkDrawIndexedIndirectCommand indirectCmd {};
+
+			switch (planet_list[n].vertex_index) {
+			case 0:
+				indirectCmd.indexCount = static_cast<uint32_t>(planet_index_list.size());
+				indirectCmd.instanceCount = 1;
+				indirectCmd.firstIndex = 0;
+				indirectCmd.vertexOffset = 0;
+				indirectCmd.firstInstance = 0;
+				break;
+			case 1:
+				indirectCmd.indexCount = static_cast<uint32_t>(ring_index_list.size());
+				indirectCmd.instanceCount = 1;
+				indirectCmd.firstIndex = 0;
+				indirectCmd.vertexOffset = 0;
+				indirectCmd.firstInstance = 0;
+				break;
+			}
+
+			indirectCommands.push_back(indirectCmd);
+		}
+
+		// create indirect command buffer
+		VkDeviceSize bufferSize = sizeof(VkDrawIndexedIndirectCommand) * indirectCommands.size();
+
+		VkBuffer stagingBuffer;
+		VkDeviceMemory stagingBufferMemory;
+		createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
+
+		void* data;
+		vkMapMemory(device, stagingBufferMemory, 0, bufferSize, 0, &data);
+		memcpy(data, indirectCommands.data(), (size_t)bufferSize);
+		vkUnmapMemory(device, stagingBufferMemory);
+
+		createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, indirectCommandsBuffer, indirectCommandsBufferMemory);
+
+		copyBuffer(stagingBuffer, indirectCommandsBuffer, bufferSize);
+
+		vkDestroyBuffer(device, stagingBuffer, nullptr);
+		vkFreeMemory(device, stagingBufferMemory, nullptr);
+
+
 	}
 
 
